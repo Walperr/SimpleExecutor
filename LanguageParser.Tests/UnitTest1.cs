@@ -46,7 +46,7 @@ public class UnitTest1
     [Fact]
     public void CanExecuteHelloWorld()
     {
-        var text = "print(\"Hello, World!\", \"This is my new language\", 34, 436.65,0,43)";
+        var text = "print(\"Hello, World!\", 'This is my new language', 34, 436.65,0,43)";
         
         _testOutputHelper.WriteLine(text);
 

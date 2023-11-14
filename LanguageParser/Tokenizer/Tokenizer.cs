@@ -126,6 +126,9 @@ internal sealed class Tokenizer
                         case '"':
                             builder.Append('"');
                             break;
+                        case '\'':
+                            builder.Append('\'');
+                            break;
                         case 'n':
                             builder.Append('\n');
                             break;
@@ -137,7 +140,7 @@ internal sealed class Tokenizer
                     }
                     _charStream.Advance();
                     break;
-                case '"':
+                case '"' or '\'':
                     _charStream.Advance();
                     return new Token(SyntaxKind.String, builder.ToString(), start);
                 case '\0':
