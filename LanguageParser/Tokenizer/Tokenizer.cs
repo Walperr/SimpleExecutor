@@ -47,6 +47,16 @@ internal sealed class Tokenizer
                 return SimpleToken(SyntaxKind.Comma);
             case '"' or '\'':
                 return StringToken();
+            case '+':
+                return SimpleToken(SyntaxKind.Plus);
+            case '-':
+                return SimpleToken(SyntaxKind.Minus);
+            case '*':
+                return SimpleToken(SyntaxKind.Asterisk);
+            case '/':
+                return SimpleToken(SyntaxKind.Slash);
+            case ';':
+                return SimpleToken(SyntaxKind.Semicolon);
             case var c:
             {
                 if (IsOperator(c))
@@ -69,14 +79,15 @@ internal sealed class Tokenizer
     {
         return lexeme switch
         {
-            "/" => throw new Exception("Slash"),
-            "*" => throw new Exception("Asterisk"),
-            "+" => throw new Exception("Plus"),
-            "-" => throw new Exception("Minus"),
-            "&&" => throw new Exception("LogicalAnd"),
-            "||" => throw new Exception("LogicalOr"),
-            "=" => throw new Exception("Equals sign"),
-            "=>" => throw new Exception("Arrow")
+            "/" => SyntaxKind.Slash,
+            "*" => SyntaxKind.Asterisk,
+            "+" => SyntaxKind.Plus,
+            "-" => SyntaxKind.Minus,
+            "&&" => SyntaxKind.ConditionalAndOperator,
+            "||" => SyntaxKind.ConditionalOrOperator,
+            "=" => SyntaxKind.EqualsSign,
+            "=>" => throw new Exception("Arrow"),
+            _ => SyntaxKind.Operator
         };
     }
 
@@ -170,7 +181,7 @@ internal sealed class Tokenizer
         {
             switch (_charStream.Current)
             {
-                case '\r' or '\n':
+                case '\r' or '\n' or ';':
                     builder.Add(NewLine());
                     break;
                 default:
