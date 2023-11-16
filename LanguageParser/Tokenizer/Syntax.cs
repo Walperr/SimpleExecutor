@@ -11,6 +11,8 @@ internal static class Syntax
         {
             SyntaxKind.OpenParenthesis => "(",
             SyntaxKind.CloseParenthesis => ")",
+            SyntaxKind.OpenBrace => "{",
+            SyntaxKind.CloseBrace => "}",
             SyntaxKind.Comma => ",",
             SyntaxKind.Semicolon => ";",
             SyntaxKind.Word => "word",
@@ -21,6 +23,20 @@ internal static class Syntax
             SyntaxKind.Asterisk => "*",
             SyntaxKind.Slash => "/",
             SyntaxKind.EqualsSign => "=",
+            SyntaxKind.If => "if",
+            SyntaxKind.Then => "then",
+            SyntaxKind.Else => "else",
+            SyntaxKind.Repeat => "repeat",
+            SyntaxKind.Until => "until",
+            SyntaxKind.While => "while",
+            SyntaxKind.For => "for",
+            SyntaxKind.Number => "number",
+            SyntaxKind.String => "string",
+            SyntaxKind.Bool => "bool",
+            SyntaxKind.True => "true",
+            SyntaxKind.False => "false",
+            SyntaxKind.Or => "or",
+            SyntaxKind.And => "and",
             _ => throw new InvalidEnumArgumentException()
         };
     }

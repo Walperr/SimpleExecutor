@@ -1,7 +1,5 @@
 namespace LanguageParser.Common;
 
-// print("Hello, world!");
-// print('Hello, world!');
 public enum SyntaxKind
 {
     /// <summary>
@@ -32,6 +30,14 @@ public enum SyntaxKind
     /// )
     /// </summary>
     CloseParenthesis,
+    /// <summary>
+    /// {
+    /// </summary>
+    OpenBrace,
+    /// <summary>
+    /// }
+    /// </summary>
+    CloseBrace,
     /// <summary>
     /// ,
     /// </summary>
@@ -72,6 +78,63 @@ public enum SyntaxKind
     /// ;
     /// </summary>
     Semicolon,
+    
+    /// <summary>
+    /// if keyword
+    /// </summary>
+    If,
+    /// <summary>
+    /// then keyword
+    /// </summary>
+    Then,
+    /// <summary>
+    /// else keyword
+    /// </summary>
+    Else,
+    /// <summary>
+    /// repeat keyword
+    /// </summary>
+    Repeat,
+    /// <summary>
+    /// until keyword
+    /// </summary>
+    Until,
+    /// <summary>
+    /// for keyword
+    /// </summary>
+    For,
+    /// <summary>
+    /// while keyword
+    /// </summary>
+    While,
+    /// <summary>
+    /// or keyword
+    /// </summary>
+    Or,
+    /// <summary>
+    /// and keyword
+    /// </summary>
+    And,
+    /// <summary>
+    /// number keyword (double type)
+    /// </summary>
+    Number,
+    /// <summary>
+    /// string keyword (string type)
+    /// </summary>
+    String,
+    /// <summary>
+    /// bool keyword (boolean type)
+    /// </summary>
+    Bool,
+    /// <summary>
+    /// true keyword
+    /// </summary>
+    True,
+    /// <summary>
+    /// false keyword
+    /// </summary>
+    False,
     /// <summary>
     /// Non predefined operator
     /// </summary>
@@ -79,7 +142,7 @@ public enum SyntaxKind
     /// <summary>
     /// and number
     /// </summary>
-    Number,
+    NumberLiteral,
     /// <summary>
     /// any non-empty text
     /// </summary>
@@ -87,7 +150,7 @@ public enum SyntaxKind
     /// <summary>
     /// any text in quotes
     /// </summary>
-    String,
+    StringLiteral,
     /// <summary>
     /// a * b
     /// </summary>
@@ -128,6 +191,26 @@ public enum SyntaxKind
     /// (expression)
     /// </summary>
     ParenthesizedExpression,
+    /// <summary>
+    /// if a then b else c
+    /// </summary>
+    IfExpression,
+    /// <summary>
+    /// while (true) expression
+    /// </summary>
+    WhileExpression,
+    /// <summary>
+    /// repeat expression until (b)
+    /// </summary>
+    RepeatExpression,
+    /// <summary>
+    /// for (a; b; c) expression
+    /// </summary>
+    ForExpression,
+    /// <summary>
+    /// { expression; expression; ... }
+    /// </summary>
+    ScopeExpression,
     
     NewLine,
     

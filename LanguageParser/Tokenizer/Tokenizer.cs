@@ -43,6 +43,10 @@ internal sealed class Tokenizer
                 return SimpleToken(SyntaxKind.OpenParenthesis);
             case ')':
                 return SimpleToken(SyntaxKind.CloseParenthesis);
+            case '{':
+                return SimpleToken(SyntaxKind.OpenBrace);
+            case '}':
+                return SimpleToken(SyntaxKind.CloseBrace);
             case ',':
                 return SimpleToken(SyntaxKind.Comma);
             case '"' or '\'':
@@ -64,8 +68,8 @@ internal sealed class Tokenizer
 
                 if (!IsSpecial(c))
                     return IsDigitOrDot(_charStream.Current)
-                        ? ReadToken(IsDigitOrDot, _ => SyntaxKind.Number)
-                        : ReadToken(IsWord, _ => SyntaxKind.Word);
+                        ? ReadToken(IsDigitOrDot, _ => SyntaxKind.NumberLiteral)
+                        : AdjustKeyword(ReadToken(IsWord, _ => SyntaxKind.Word));
                 
                 var token = new Token(SyntaxKind.Error, c.ToString(), _charStream.Index);
                 _charStream.Advance();
@@ -73,6 +77,28 @@ internal sealed class Tokenizer
 
             }
         }
+    }
+
+    private Token AdjustKeyword(Token token)
+    {
+        return token.Lexeme switch
+        {
+            "if" => new Token(SyntaxKind.If, token.Lexeme, token.Range.Start),
+            "then" => new Token(SyntaxKind.Then, token.Lexeme, token.Range.Start),
+            "else" => new Token(SyntaxKind.Else, token.Lexeme, token.Range.Start),
+            "repeat" => new Token(SyntaxKind.Repeat, token.Lexeme, token.Range.Start),
+            "until" => new Token(SyntaxKind.Until, token.Lexeme, token.Range.Start),
+            "while" => new Token(SyntaxKind.While, token.Lexeme, token.Range.Start),
+            "for" => new Token(SyntaxKind.For, token.Lexeme, token.Range.Start),
+            "number" => new Token(SyntaxKind.Number, token.Lexeme, token.Range.Start),
+            "string" => new Token(SyntaxKind.String, token.Lexeme, token.Range.Start),
+            "bool" => new Token(SyntaxKind.Bool, token.Lexeme, token.Range.Start),
+            "or" => new Token(SyntaxKind.Or, token.Lexeme, token.Range.Start),
+            "and" => new Token(SyntaxKind.And, token.Lexeme, token.Range.Start),
+            "true" => new Token(SyntaxKind.True, token.Lexeme, token.Range.Start),
+            "false" => new Token(SyntaxKind.False, token.Lexeme, token.Range.Start),
+            _ => token
+        };
     }
 
     private SyntaxKind GetOperatorByLexeme(string lexeme)
@@ -83,6 +109,8 @@ internal sealed class Tokenizer
             "*" => SyntaxKind.Asterisk,
             "+" => SyntaxKind.Plus,
             "-" => SyntaxKind.Minus,
+            "and" => SyntaxKind.ConditionalAndOperator,
+            "or" => SyntaxKind.ConditionalOrOperator,
             "&&" => SyntaxKind.ConditionalAndOperator,
             "||" => SyntaxKind.ConditionalOrOperator,
             "=" => SyntaxKind.EqualsSign,
@@ -153,7 +181,7 @@ internal sealed class Tokenizer
                     break;
                 case '"' or '\'':
                     _charStream.Advance();
-                    return new Token(SyntaxKind.String, builder.ToString(), start);
+                    return new Token(SyntaxKind.StringLiteral, builder.ToString(), start);
                 case '\0':
                     return new Token(SyntaxKind.Error, "EOF", _charStream.Index);
                 default:

@@ -46,7 +46,9 @@ public sealed class Token : ISyntaxElement
 
     public bool IsToken => Kind is >= SyntaxKind.WhiteSpace and <= SyntaxKind.Semicolon;
     
-    public bool IsString => Kind == SyntaxKind.String;
+    public bool IsString => Kind == SyntaxKind.StringLiteral;
 
-    public bool IsNumber => Kind == SyntaxKind.Number;
+    public bool IsNumber => Kind == SyntaxKind.NumberLiteral;
+
+    public bool IsKeyWord => Kind is >= SyntaxKind.If and <= SyntaxKind.False;
 }

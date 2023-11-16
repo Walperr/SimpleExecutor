@@ -9,4 +9,6 @@ public interface IStream<out T>
     
     public bool CanAdvance { get; }
     public void Advance();
+    public bool CanRecede { get; }
+    public void Recede();
 }

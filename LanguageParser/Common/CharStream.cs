@@ -21,4 +21,17 @@ internal sealed class CharStream : IStream<char>
         if (CanAdvance)
             Index++;
     }
+
+    public bool CanRecede => Index > 0;
+    public void Recede()
+    {
+        if (CanRecede)
+        {
+            Index--;
+        }
+        else
+        {
+            throw new InvalidOperationException();
+        }
+    }
 }

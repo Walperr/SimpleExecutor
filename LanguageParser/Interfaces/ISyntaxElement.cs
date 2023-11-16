@@ -10,6 +10,8 @@ public interface ISyntaxElement
 
     public bool IsToken => false;
 
+    public bool IsKeyWord => false;
+
     public bool IsExpression => false;
 
     public bool IsString => false;

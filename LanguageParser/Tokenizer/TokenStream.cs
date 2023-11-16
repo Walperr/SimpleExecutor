@@ -31,4 +31,11 @@ internal sealed class TokenStream : IStream<Token>
     {
         Index++;
     }
+
+    public bool CanRecede => Index > 0;
+    public void Recede()
+    {
+        if (CanRecede)
+            Index--;
+    }
 }

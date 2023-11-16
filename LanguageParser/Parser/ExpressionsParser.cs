@@ -39,7 +39,7 @@ public sealed class ExpressionsParser
             }
 
             if (expression is null)
-                return parser._errors.First();
+                return parser._errors.Last();
 
             expressions.Add(expression);
         }
@@ -49,15 +49,21 @@ public sealed class ExpressionsParser
 
     private ExpressionBase? ParseFunctionInvocation(ExpressionBase function)
     {
-        if (TryParseCommaSeparated(SyntaxKind.OpenParenthesis, SyntaxKind.CloseParenthesis, out var open, out var args,
+        if (TryParseSeparated(SyntaxKind.OpenParenthesis, SyntaxKind.CloseParenthesis, SyntaxKind.Comma,
+                false,
+                out var open,
+                out var args,
                 out var close))
             return new InvocationExpression(function, open, args, close);
 
         return null;
     }
 
-    private bool TryParseCommaSeparated(SyntaxKind open, SyntaxKind close, [NotNullWhen(true)] out Token? openToken,
-        [NotNullWhen(true)] out IList<ExpressionBase>? args, [NotNullWhen(true)] out Token? closeToken)
+    private bool TryParseSeparated(SyntaxKind open, SyntaxKind close, SyntaxKind separator,
+        bool isLastArgEmpty,
+        [NotNullWhen(true)] out Token? openToken,
+        [NotNullWhen(true)] out IList<ExpressionBase>? args,
+        [NotNullWhen(true)] out Token? closeToken)
     {
         openToken = EatToken(open);
         if (openToken is null)
@@ -71,6 +77,7 @@ public sealed class ExpressionsParser
         {
             closeToken = EatToken();
             args = Array.Empty<ExpressionBase>();
+            return true;
         }
 
         args = new List<ExpressionBase>();
@@ -86,15 +93,22 @@ public sealed class ExpressionsParser
 
             args.Add(expr);
 
-            if (_tokens.Current.Kind == close)
-                break;
+            if (!isLastArgEmpty)
+                if (_tokens.Current.Kind == close)
+                    break;
 
-            if (EatToken(SyntaxKind.Comma) is null)
+            if (EatToken(separator) is null)
             {
                 args = null;
                 closeToken = null;
                 return false;
             }
+
+            if (!isLastArgEmpty) 
+                continue;
+            
+            if (_tokens.Current.Kind == close)
+                break;
         }
 
         closeToken = EatToken(close);
@@ -195,14 +209,28 @@ public sealed class ExpressionsParser
     {
         switch (_tokens.Current.Kind)
         {
-            case SyntaxKind.Number:
+            case SyntaxKind.NumberLiteral:
                 return new ConstantExpression(_tokens.Current.Kind, EatToken());
             case SyntaxKind.OpenParenthesis:
                 return ParseParenthesizedExpression();
+            case SyntaxKind.OpenBrace:
+                return ParseScopeExpression();
+            case SyntaxKind.If:
+                return ParseIfExpression();
+            case SyntaxKind.While:
+                return ParseWhileExpression();
+            case SyntaxKind.Repeat:
+                return ParseRepeatExpression();
+            case SyntaxKind.For:
+                return ParseForExpression();
             case SyntaxKind.Word:
                 return new ConstantExpression(_tokens.Current.Kind, EatToken());
-            case SyntaxKind.String:
-                return new ConstantExpression(SyntaxKind.String, EatToken());
+            case SyntaxKind.StringLiteral:
+                return new ConstantExpression(SyntaxKind.StringLiteral, EatToken());
+            case SyntaxKind.True:
+                return new ConstantExpression(SyntaxKind.True, EatToken());
+            case SyntaxKind.False:
+                return new ConstantExpression(SyntaxKind.False, EatToken());
             case SyntaxKind.EOF:
                 _errors.Add(new UnexpectedEofException(_tokens.Current.Range));
                 return null;
@@ -210,6 +238,173 @@ public sealed class ExpressionsParser
                 _errors.Add(new UnexpectedTokenException(_tokens.Current));
                 return null;
         }
+    }
+
+    private ExpressionBase? ParseForExpression()
+    {
+        var forToken = EatToken(SyntaxKind.For);
+        if (forToken is null)
+            return null;
+
+        var openToken = EatToken(SyntaxKind.OpenParenthesis);
+        if (openToken is null)
+            return null;
+        
+        ExpressionBase? initialization = null;
+        
+        if (_tokens.Current.Kind is not SyntaxKind.Semicolon)
+        {
+            initialization = ParseExpression();
+
+            if (initialization is null)
+                return null;
+        }
+        
+        if (EatToken(SyntaxKind.Semicolon) is null)
+            return null;
+
+        ExpressionBase? condition = null;
+        if (_tokens.Current.Kind is not SyntaxKind.Semicolon)
+        {
+            condition = ParseExpression();
+            if (condition is null)
+                return null;
+        }
+        
+        if (EatToken(SyntaxKind.Semicolon) is null)
+            return null;
+
+        ExpressionBase? step = null;
+        
+        if (_tokens.Current.Kind is not SyntaxKind.CloseParenthesis)
+        {
+            step = ParseExpression();
+            if (step is null)
+                return null;
+        }
+
+        var closeToken = EatToken(SyntaxKind.CloseParenthesis);
+        if (closeToken is null)
+            return null;
+
+        var body = ParseExpression();
+        if (body is null)
+            return null;
+
+        return new ForExpression(forToken, openToken, initialization, condition, step, closeToken, body);
+    }
+
+    private ExpressionBase? ParseRepeatExpression()
+    {
+        var repeatToken = EatToken(SyntaxKind.Repeat);
+        if (repeatToken is null)
+            return null;
+
+        var body = ParseExpression();
+        if (body is null) 
+            return null;
+
+        var untilToken = EatToken(SyntaxKind.Until);
+        if (untilToken is null)
+            return null;
+
+        var openToken = EatToken(SyntaxKind.OpenParenthesis);
+        if (openToken is null)
+            return null;
+
+        var condition = ParseExpression();
+        if (condition is null)
+            return null;
+
+        var closeToken = EatToken(SyntaxKind.CloseParenthesis);
+        if (closeToken is null)
+            return null;
+
+        return new RepeatExpression(repeatToken, body, untilToken, openToken, condition, closeToken);
+    }
+
+    private ExpressionBase? ParseWhileExpression()
+    {
+        var whileToken = EatToken(SyntaxKind.While);
+        if (whileToken is null)
+            return null;
+
+        var openToken = EatToken(SyntaxKind.OpenParenthesis);
+        if (openToken is null)
+            return null;
+
+        var condition = ParseExpression();
+        if (condition is null)
+            return null;
+
+        var closeToken = EatToken(SyntaxKind.CloseParenthesis);
+        if (closeToken is null)
+            return null;
+
+        var body = ParseExpression();
+        if (body is null)
+            return null;
+
+        return new WhileExpression(whileToken, openToken, condition, closeToken, body);
+    }
+
+    private ExpressionBase? ParseIfExpression()
+    {
+        var ifToken = EatToken(SyntaxKind.If);
+        if (ifToken is null)
+            return null;
+
+        var open = EatToken(SyntaxKind.OpenParenthesis);
+        if (open is null)
+            return null;
+
+        var condition = ParseExpression();
+        if (condition is null)
+            return null;
+
+        var close = EatToken(SyntaxKind.CloseParenthesis);
+        if (close is null)
+            return null;
+
+        var thenToken = EatToken(SyntaxKind.Then);
+        if (thenToken is null)
+            return null;
+
+        var trueBranch = ParseExpression();
+        if (trueBranch is null)
+            return null;
+
+        var token = EatToken(SyntaxKind.Semicolon);
+
+        if (token is null)
+            return null;
+        
+        if (_tokens.Current.Kind is not SyntaxKind.Else)
+        {
+            _tokens.Recede();
+            return new IfExpression(ifToken, open, condition, close, thenToken, trueBranch);
+        }
+        
+        var elseToken = EatToken();
+
+        var falseBranch = ParseExpression();
+        if (falseBranch is null)
+            return null;
+
+        return new IfExpression(ifToken, open, condition, close, thenToken, trueBranch, elseToken, falseBranch);
+    }
+
+    private ExpressionBase? ParseScopeExpression()
+    {
+        if (TryParseSeparated(SyntaxKind.OpenBrace, SyntaxKind.CloseBrace, SyntaxKind.Semicolon,
+                true,
+                out var open,
+                out var expressions,
+                out var close))
+            
+            return new ScopeExpression(open, expressions, close);
+
+        return null;
     }
 
 
@@ -260,10 +455,15 @@ public sealed class ExpressionsParser
             SyntaxKind.AddExpression or SyntaxKind.SubtractExpression => Precedence.Addition,
             SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression => Precedence.Multiplication,
             SyntaxKind.ParenthesizedExpression or
-                SyntaxKind.Number or
-                SyntaxKind.String or
+                SyntaxKind.NumberLiteral or
+                SyntaxKind.StringLiteral or
                 SyntaxKind.Word or
-                SyntaxKind.InvocationExpression => Precedence.Primary,
+                SyntaxKind.InvocationExpression or
+                SyntaxKind.IfExpression or
+                SyntaxKind.WhileExpression or
+                SyntaxKind.RepeatExpression or
+                SyntaxKind.ForExpression or
+                SyntaxKind.ScopeExpression => Precedence.Primary,
             _ => throw new InvalidEnumArgumentException()
         };
     }

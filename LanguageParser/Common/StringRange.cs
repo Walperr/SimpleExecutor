@@ -60,4 +60,9 @@ public readonly struct StringRange : IEquatable<StringRange>
     {
         return !left.Equals(right);
     }
+
+    public override string ToString()
+    {
+        return $"Start: {Start} End: {End} Length: {Length}";
+    }
 }

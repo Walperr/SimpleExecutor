@@ -13,9 +13,11 @@ public sealed class ConstantExpression : ExpressionBase, ISyntaxElement
 
     public Token Token { get; }
 
-    public bool IsNumber => Kind == SyntaxKind.Number;
+    public bool IsNumber => Kind == SyntaxKind.NumberLiteral;
 
-    public bool IsString => Kind == SyntaxKind.String;
+    public bool IsString => Kind == SyntaxKind.StringLiteral;
+
+    public bool IsBool => Kind is SyntaxKind.True or SyntaxKind.False;
 
     public string Lexeme => Token.Lexeme;
 
