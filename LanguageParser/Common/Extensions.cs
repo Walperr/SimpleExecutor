@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace LanguageParser.Common;
 
-public static class Extensions
+internal static class Extensions
 {
     public static TAcc Aggregate<TAcc, T>(this IEnumerable<T>? source, Func<T, TAcc>? seedSelector,
         Func<TAcc, T, TAcc>? selector)

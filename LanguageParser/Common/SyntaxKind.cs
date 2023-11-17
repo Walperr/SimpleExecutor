@@ -43,6 +43,10 @@ public enum SyntaxKind
     /// </summary>
     Comma,
     /// <summary>
+    /// =
+    /// </summary>
+    AssignmentOperator,
+    /// <summary>
     /// ==
     /// </summary>
     EqualityOperator,
@@ -83,10 +87,6 @@ public enum SyntaxKind
     /// if keyword
     /// </summary>
     If,
-    /// <summary>
-    /// then keyword
-    /// </summary>
-    Then,
     /// <summary>
     /// else keyword
     /// </summary>
@@ -171,6 +171,14 @@ public enum SyntaxKind
     /// a == b
     /// </summary>
     EqualityExpression,
+    /// <summary>
+    /// a = b
+    /// </summary>
+    AssignmentExpression,
+    /// <summary>
+    /// string str;
+    /// </summary>
+    VariableExpression,
     /// <summary>
     /// a && b
     /// </summary>

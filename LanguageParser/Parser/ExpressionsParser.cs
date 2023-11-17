@@ -17,40 +17,46 @@ public sealed class ExpressionsParser
         _tokens = tokens;
     }
 
-    public static Result<ParseException, Program> Parse(string text)
+    public static Result<ParseException, ExpressionBase> Parse(string text)
     {
-        var tokens = Tokenizer.Tokenizer.Tokenize(text);
+        TokenStream tokens;
+        
+        try
+        {
+            tokens = PreParser.PreParse((TokenStream)Tokenizer.Tokenizer.Tokenize(text));
+        }
+        catch (ParseException e)
+        {
+            return e;
+        }
 
         var parser = new ExpressionsParser(tokens);
 
-        var expressions = new List<ExpressionBase>();
+        ExpressionBase? expression;
 
-        while (parser._tokens.Current.Kind is not SyntaxKind.EOF)
+        try
         {
-            ExpressionBase? expression;
-
-            try
-            {
-                expression = parser.ParseOuterExpression();
-            }
-            catch (Exception e)
-            {
-                return new UnhandledParserException(e);
-            }
-
-            if (expression is null)
-                return parser._errors.Last();
-
-            expressions.Add(expression);
+            expression = parser.ParseExpression();
+        }
+        catch (Exception e)
+        {
+            return new UnhandledParserException(e);
         }
 
-        return new Program(expressions);
+        if (expression is null)
+            return parser._errors.First();
+
+        if (tokens.Current.Kind != SyntaxKind.EOF)
+        {
+            return new ParseException("Expression is not consumed entirely", tokens.Current.Range);
+        }
+
+        return expression;
     }
 
     private ExpressionBase? ParseFunctionInvocation(ExpressionBase function)
     {
         if (TryParseSeparated(SyntaxKind.OpenParenthesis, SyntaxKind.CloseParenthesis, SyntaxKind.Comma,
-                false,
                 out var open,
                 out var args,
                 out var close))
@@ -60,7 +66,6 @@ public sealed class ExpressionsParser
     }
 
     private bool TryParseSeparated(SyntaxKind open, SyntaxKind close, SyntaxKind separator,
-        bool isLastArgEmpty,
         [NotNullWhen(true)] out Token? openToken,
         [NotNullWhen(true)] out IList<ExpressionBase>? args,
         [NotNullWhen(true)] out Token? closeToken)
@@ -93,8 +98,7 @@ public sealed class ExpressionsParser
 
             args.Add(expr);
 
-            if (!isLastArgEmpty)
-                if (_tokens.Current.Kind == close)
+            if (_tokens.Current.Kind == close)
                     break;
 
             if (EatToken(separator) is null)
@@ -103,12 +107,6 @@ public sealed class ExpressionsParser
                 closeToken = null;
                 return false;
             }
-
-            if (!isLastArgEmpty) 
-                continue;
-            
-            if (_tokens.Current.Kind == close)
-                break;
         }
 
         closeToken = EatToken(close);
@@ -132,7 +130,11 @@ public sealed class ExpressionsParser
 
     private ExpressionBase? ParseExpression()
     {
-        return ParseSubExpression(Precedence.Expression);
+        var expression = ParseSubExpression(Precedence.Expression);
+        if (_tokens.Current.Kind is SyntaxKind.Semicolon)
+            EatToken();
+        
+        return expression;
     }
 
     private ExpressionBase? ParseSubExpression(Precedence precedence)
@@ -225,6 +227,12 @@ public sealed class ExpressionsParser
                 return ParseForExpression();
             case SyntaxKind.Word:
                 return new ConstantExpression(_tokens.Current.Kind, EatToken());
+            case SyntaxKind.Number:
+                return ParseVariable(SyntaxKind.Number);
+            case SyntaxKind.String:
+                return ParseVariable(SyntaxKind.String);
+            case SyntaxKind.Bool:
+                return ParseVariable(SyntaxKind.Bool);
             case SyntaxKind.StringLiteral:
                 return new ConstantExpression(SyntaxKind.StringLiteral, EatToken());
             case SyntaxKind.True:
@@ -238,6 +246,29 @@ public sealed class ExpressionsParser
                 _errors.Add(new UnexpectedTokenException(_tokens.Current));
                 return null;
         }
+    }
+
+    private ExpressionBase? ParseVariable(SyntaxKind kind)
+    {
+        var typeToken = EatToken(kind);
+        if (typeToken is null)
+            return null;
+
+        var nameToken = EatToken(SyntaxKind.Word);
+        if (nameToken is null)
+            return null;
+        
+        if (_tokens.Current.Kind is SyntaxKind.Semicolon)
+            return new VariableExpression(typeToken, nameToken);
+
+        _tokens.Recede();
+        
+        var value = ParseExpression();
+        if (value is BinaryExpression { Kind: SyntaxKind.AssignmentExpression } assignment)
+            return new VariableExpression(typeToken, nameToken, assignment);
+        
+        _errors.Add(new ParseException("Expected assignment", _tokens.Current.Range));
+        return null;
     }
 
     private ExpressionBase? ParseForExpression()
@@ -259,8 +290,7 @@ public sealed class ExpressionsParser
             if (initialization is null)
                 return null;
         }
-        
-        if (EatToken(SyntaxKind.Semicolon) is null)
+        else if (EatToken(SyntaxKind.Semicolon) is null)
             return null;
 
         ExpressionBase? condition = null;
@@ -269,9 +299,7 @@ public sealed class ExpressionsParser
             condition = ParseExpression();
             if (condition is null)
                 return null;
-        }
-        
-        if (EatToken(SyntaxKind.Semicolon) is null)
+        } else if (EatToken(SyntaxKind.Semicolon) is null)
             return null;
 
         ExpressionBase? step = null;
@@ -366,45 +394,44 @@ public sealed class ExpressionsParser
         if (close is null)
             return null;
 
-        var thenToken = EatToken(SyntaxKind.Then);
-        if (thenToken is null)
-            return null;
-
         var trueBranch = ParseExpression();
         if (trueBranch is null)
             return null;
-
-        var token = EatToken(SyntaxKind.Semicolon);
-
-        if (token is null)
-            return null;
         
         if (_tokens.Current.Kind is not SyntaxKind.Else)
-        {
-            _tokens.Recede();
-            return new IfExpression(ifToken, open, condition, close, thenToken, trueBranch);
-        }
-        
+            return new IfExpression(ifToken, open, condition, close, trueBranch);
+
         var elseToken = EatToken();
 
         var falseBranch = ParseExpression();
         if (falseBranch is null)
             return null;
 
-        return new IfExpression(ifToken, open, condition, close, thenToken, trueBranch, elseToken, falseBranch);
+        return new IfExpression(ifToken, open, condition, close, trueBranch, elseToken, falseBranch);
     }
 
     private ExpressionBase? ParseScopeExpression()
     {
-        if (TryParseSeparated(SyntaxKind.OpenBrace, SyntaxKind.CloseBrace, SyntaxKind.Semicolon,
-                true,
-                out var open,
-                out var expressions,
-                out var close))
-            
-            return new ScopeExpression(open, expressions, close);
+        var openBrace = EatToken(SyntaxKind.OpenBrace);
+        if (openBrace is null)
+            return null;
 
-        return null;
+        var expressions = new List<ExpressionBase>();
+
+        while (_tokens.Current.Kind != SyntaxKind.CloseBrace)
+        {
+            var expression = ParseExpression();
+            if (expression is null)
+                return null;
+
+            expressions.Add(expression);
+        }
+
+        var closeBrace = EatToken(SyntaxKind.CloseBrace);
+        if (closeBrace is null)
+            return null;
+
+        return new ScopeExpression(openBrace, expressions, closeBrace);
     }
 
 
@@ -448,7 +475,8 @@ public sealed class ExpressionsParser
     {
         return kind switch
         {
-            SyntaxKind.EqualityOperator => Precedence.Equality,
+            SyntaxKind.AssignmentExpression => Precedence.Assignment,
+            SyntaxKind.EqualityExpression => Precedence.Equality,
             SyntaxKind.OrExpression => Precedence.ConditionalOr,
             SyntaxKind.AndExpression => Precedence.ConditionalAnd,
             SyntaxKind.RelationalExpression => Precedence.Relational,
@@ -463,7 +491,8 @@ public sealed class ExpressionsParser
                 SyntaxKind.WhileExpression or
                 SyntaxKind.RepeatExpression or
                 SyntaxKind.ForExpression or
-                SyntaxKind.ScopeExpression => Precedence.Primary,
+                SyntaxKind.ScopeExpression or 
+                SyntaxKind.VariableExpression => Precedence.Primary,
             _ => throw new InvalidEnumArgumentException()
         };
     }
@@ -471,6 +500,7 @@ public sealed class ExpressionsParser
     private enum Precedence : uint
     {
         Expression = 0,
+        Assignment,
         ConditionalOr,
         ConditionalAnd,
         Equality,

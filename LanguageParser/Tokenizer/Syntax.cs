@@ -24,7 +24,6 @@ internal static class Syntax
             SyntaxKind.Slash => "/",
             SyntaxKind.EqualsSign => "=",
             SyntaxKind.If => "if",
-            SyntaxKind.Then => "then",
             SyntaxKind.Else => "else",
             SyntaxKind.Repeat => "repeat",
             SyntaxKind.Until => "until",
@@ -54,9 +53,11 @@ internal static class Syntax
             SyntaxKind.Minus => SyntaxKind.SubtractExpression,
             SyntaxKind.Asterisk => SyntaxKind.MultiplyExpression,
             SyntaxKind.Slash => SyntaxKind.MultiplyExpression,
+            SyntaxKind.EqualsSign => SyntaxKind.AssignmentOperator,
             SyntaxKind.EqualityOperator => SyntaxKind.EqualityExpression,
             SyntaxKind.ConditionalAndOperator => SyntaxKind.AndExpression,
             SyntaxKind.ConditionalOrOperator => SyntaxKind.OrExpression,
+            SyntaxKind.AssignmentOperator => SyntaxKind.AssignmentExpression,
             SyntaxKind.Operator => SyntaxKind.RelationalExpression,
             _ => SyntaxKind.None
         };

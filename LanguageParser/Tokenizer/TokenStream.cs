@@ -16,7 +16,7 @@ internal sealed class TokenStream : IStream<Token>
 
     public int Length => _tokens.Length;
 
-    private Token EOF => _tokens.Length > 0
+    public Token EOF => _tokens.Length > 0
         ? new Token(SyntaxKind.EOF, "", _tokens[^1].Range.End)
         : new Token(SyntaxKind.EOF, "", 0);
 

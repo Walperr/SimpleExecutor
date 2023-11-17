@@ -6,14 +6,14 @@ namespace LanguageParser.Expressions;
 
 public sealed class IfExpression : ExpressionBase
 {
-    internal IfExpression(Token ifToken, Token openToken, ExpressionBase condition, Token closeToken, Token thenToken, ExpressionBase thenBranch,
-        Token? elseToken = null, ExpressionBase? elseBranch = null) : base(SyntaxKind.IfExpression)
+    internal IfExpression(Token ifToken, Token openToken, ExpressionBase condition, Token closeToken,
+        ExpressionBase thenBranch, Token? elseToken = null, ExpressionBase? elseBranch = null) : base(SyntaxKind
+        .IfExpression)
     {
         IfToken = ifToken;
         OpenToken = openToken;
         Condition = condition;
         CloseToken = closeToken;
-        ThenToken = thenToken;
         ThenBranch = thenBranch;
         ElseToken = elseToken;
         ElseBranch = elseBranch;
@@ -23,7 +23,6 @@ public sealed class IfExpression : ExpressionBase
     public Token OpenToken { get; }
     public ExpressionBase Condition { get; }
     public Token CloseToken { get; }
-    public Token ThenToken { get; }
     public ExpressionBase ThenBranch { get; }
     public Token? ElseToken { get; }
     public ExpressionBase? ElseBranch { get; }
@@ -34,7 +33,6 @@ public sealed class IfExpression : ExpressionBase
         yield return OpenToken;
         yield return Condition;
         yield return CloseToken;
-        yield return ThenToken;
         yield return ThenBranch;
         
         if (ElseToken is not null)

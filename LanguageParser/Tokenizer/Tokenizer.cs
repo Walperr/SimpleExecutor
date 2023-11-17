@@ -84,7 +84,6 @@ internal sealed class Tokenizer
         return token.Lexeme switch
         {
             "if" => new Token(SyntaxKind.If, token.Lexeme, token.Range.Start),
-            "then" => new Token(SyntaxKind.Then, token.Lexeme, token.Range.Start),
             "else" => new Token(SyntaxKind.Else, token.Lexeme, token.Range.Start),
             "repeat" => new Token(SyntaxKind.Repeat, token.Lexeme, token.Range.Start),
             "until" => new Token(SyntaxKind.Until, token.Lexeme, token.Range.Start),
@@ -113,7 +112,8 @@ internal sealed class Tokenizer
             "or" => SyntaxKind.ConditionalOrOperator,
             "&&" => SyntaxKind.ConditionalAndOperator,
             "||" => SyntaxKind.ConditionalOrOperator,
-            "=" => SyntaxKind.EqualsSign,
+            "=" => SyntaxKind.AssignmentOperator,
+            "==" => SyntaxKind.EqualityOperator,
             "=>" => throw new Exception("Arrow"),
             _ => SyntaxKind.Operator
         };
