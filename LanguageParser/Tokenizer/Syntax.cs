@@ -55,8 +55,8 @@ internal static class Syntax
             SyntaxKind.Slash => SyntaxKind.MultiplyExpression,
             SyntaxKind.EqualsSign => SyntaxKind.AssignmentOperator,
             SyntaxKind.EqualityOperator => SyntaxKind.EqualityExpression,
-            SyntaxKind.ConditionalAndOperator => SyntaxKind.AndExpression,
-            SyntaxKind.ConditionalOrOperator => SyntaxKind.OrExpression,
+            SyntaxKind.ConditionalAndOperator or SyntaxKind.And => SyntaxKind.AndExpression,
+            SyntaxKind.ConditionalOrOperator or SyntaxKind.Or => SyntaxKind.OrExpression,
             SyntaxKind.AssignmentOperator => SyntaxKind.AssignmentExpression,
             SyntaxKind.Operator => SyntaxKind.RelationalExpression,
             _ => SyntaxKind.None

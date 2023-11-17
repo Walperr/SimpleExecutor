@@ -15,13 +15,16 @@ public class UnitTest1
     [Fact]
     public void CanTokenizeSimpleString()
     {
-        var text = "print(\"Hello, world!\")";
+        const string text = "print(\"Hello, world!\")";
         
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
         var stream = Tokenizer.Tokenizer.Tokenize(text);
-
+        
+        Assert.NotNull(stream);
+        Assert.True(stream.CanAdvance);
+        
         while (stream.CanAdvance)
         {
             _testOutputHelper.WriteLine(stream.Current.ToString());
@@ -32,13 +35,15 @@ public class UnitTest1
     [Fact]
     public void CanTokenizeString()
     {
-        var text =
-            "print(\"Hello, world!\"); print(34.53); 5 + 3; a = 2 - 3.43; b * c == t; a / b; -34.43; -a; n || c' t && d";
+        const string text = "print(\"Hello, world!\"); print(34.53); 5 + 3; a = 2 - 3.43; b * c == t; a / b; -34.43; -a; n || c' t && d";
         
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
         var stream = Tokenizer.Tokenizer.Tokenize(text);
+        
+        Assert.NotNull(stream);
+        Assert.True(stream.CanAdvance);
 
         while (stream.CanAdvance)
         {
@@ -48,15 +53,17 @@ public class UnitTest1
     }
 
     [Fact]
-    public void CanTokenizeStringWithKeyWords()
+    public void CanTokenizeComplexString()
     {
-        var text =
-            "print(\"Hello, world!\"); if true then false else 3453; repeat i++ until(true); for (342;i=0;expression); number; string; bool; print(34.53); 5 + 3; a = 2 - 3.43; b * c == t; a / b; -34.43; -a; n || c' t && d";
+        const string text = "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string\";\n\nbool boolValue = false; \n    \nsomeFunction(arg1, arg2);\n\nif (boolValue)\n    arg1 = someFunction2(arg);\n\nif (false)\n    a = someFunction3(arg);\nelse\n    b = someFunction4(arg);\n\nif (predicat())\n    print(\"Hello, world\");\n\nwhile(true)\n{\n    Function1();\n    Function2();\n    Function3();\n    number c = (4 + 3) * 2.5 - 38 / 2;\n}\n\nfor (;;)\n{\n    ForBody();\n}\n\nrepeat Expression() until (true)\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody();\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1();\n    Expression2();\n\n    a + b + 4;\n}\n\nif (1)\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n        else\n            print(\"String\");\n\n\nif (1)\n{\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n}\nelse\n    print(\"String\");";
         
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
         var stream = Tokenizer.Tokenizer.Tokenize(text);
+        
+        Assert.NotNull(stream);
+        Assert.True(stream.CanAdvance);
 
         while (stream.CanAdvance)
         {
@@ -66,83 +73,258 @@ public class UnitTest1
     }
 
     [Fact]
-    public void CanParseVariableDeclaration()
+    public void CanParseConstantExpressions()
     {
-        var text = "number a = func(34)";
-        
-        _testOutputHelper.WriteLine(text);
+        var texts = new[]
+        {
+            "word", "'number'", "\"string\"", "4.54", "8", "true", "false", "word;", "'number';", "\"string\";",
+            "4.54;", "8;", "true;", "false;"
+        };
 
-        var expression = ExpressionsParser.Parse(text);
-        
-        if (expression.Error is not null)
-            _testOutputHelper.WriteLine(expression.Error.Message);
-        
-        Assert.NotNull(expression.Value);
-        Assert.Null(expression.Error);
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
     }
 
     [Fact]
-    public void CanParseEqualsOperatorExpression()
+    public void CanParseBinaryExpressions()
     {
-        var text = "a == b";
-        
-        _testOutputHelper.WriteLine(text);
+        var texts = new[]
+        {
+            "1 + 1", "a + b", "4 - 2.4", "2 * b", "2 == b", "a = b", "c == d", "1 == 2", "45 / 0.5", "true or false", "a and b", "1 + 1;", "a + b;",
+            "4 - 2.4;", "2 * b;", "2 == b;", "a = b;", "c == d;", "1 == 2;", "45 / 0.5;", "true or false;", "a and b;"
+        };
 
-        var expression = ExpressionsParser.Parse(text);
-        
-        if (expression.Error is not null)
-            _testOutputHelper.WriteLine(expression.Error.Message);
-        
-        Assert.NotNull(expression.Value);
-        Assert.Null(expression.Error);
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
+    }
+
+    [Fact]
+    public void CanParseScopeExpressions()
+    {
+        var texts = new[]
+        {
+            "{}", "{ 1 + 2 expr1()}", "{{} {}}", "{{} 1 * 2 string B;}", "{}", "{ 1 + 2; expr1()}", "{{}; {}}",
+            "{{}; 1 * 2; string B;}"
+        };
+
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
     }
     
     [Fact]
-    public void CanParseAssignmentOperatorExpression()
+    public void CanParseForExpressions()
     {
-        var text = "a = b";
-        
-        _testOutputHelper.WriteLine(text);
+        var texts = new[]
+        {
+            "for (;;) {}", "for (number i = 0; i <= 20; i = i + 1) callFunc()", "for (; true; step()) {}",
+            "for (;;) {};", "for (number i = 0; i <= 20; i = i + 1) callFunc();", "for (; true; step()) {};"
+        };
 
-        var expression = ExpressionsParser.Parse(text);
-        
-        if (expression.Error is not null)
-            _testOutputHelper.WriteLine(expression.Error.Message);
-        
-        Assert.NotNull(expression.Value);
-        Assert.Null(expression.Error);
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
+    }
+
+    [Fact]
+    public void CanParseIfExpressions()
+    {
+        var texts = new[]
+        {
+            "if (true) expr()", "if (check()) expr() else expr2()", "if (true) {}", "if (false) {} else {}",
+            "if (true) expr();", "if (check()) expr(); else expr2();", "if (true) {};", "if (false) {}; else {};",
+            "{if (a) b(); else c();}"
+        };
+
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
+    }
+
+    [Fact]
+    public void CanParseInvocationExpressions()
+    {
+        var texts = new[]
+        {
+            "invoke()", "call(1, 2, 'string')", "foo(arg1, 5.4, \"string\")", "invoke();", "call(1, 2, 'string');",
+            "foo(arg1, 5.4, \"string\");"
+        };
+
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
+    }
+
+    [Fact]
+    public void CanParseParenthesizedExpressions()
+    {
+        var texts = new[]
+        {
+            "(invoke())", "(call(1, 2, 'string'))", "(10 - 2)", "(2*4)", "({})", "('string')", "(invoke());",
+            "(call(1, 2, 'string'));", "(10 - 2);", "(2*4);", "({});", "('string');"
+        };
+
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
+    }
+
+    [Fact]
+    public void CanParseRepeatExpression()
+    {
+        var texts = new[]
+        {
+            "repeat expression() until (true)", "repeat { expression() foo(e, a) 5 - 8 } until (true)",
+            "repeat expression(); until (true);", "repeat { expression(); foo(e, a); 5 - 8; } until (true);"
+        };
+
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
     }
     
     [Fact]
-    public void CanParseSimpleString()
+    public void CanParseVariableDeclarationExpressions()
     {
-        var text = "print(\"Hello, world!\");";
-        
-        _testOutputHelper.WriteLine(text);
+        var texts = new[]
+        {
+            "number c = 0", "number a;", "string s = 'asfafw'", "string s = \"fewfwef\"", "string s;", "bool b = false",
+            "bool b =  true", "bool b;",
+            "number c = 0;", "string s = 'asfafw';", "string s = \"fewfwef\";", "bool b = false;", "bool b =  true;"
+        };
 
-        var expression = ExpressionsParser.Parse(text);
-        
-        if (expression.Error is not null)
-            _testOutputHelper.WriteLine(expression.Error.Message);
-        
-        Assert.NotNull(expression.Value);
-        Assert.Null(expression.Error);
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
     }
 
     [Fact]
-    public void CanParseNestedExpressions()
+    public void CanParseWhileExpression()
     {
-        var text = "5 + 4.565 == 45 != 0;";
-        
-        _testOutputHelper.WriteLine(text);
+        var texts = new[]
+        {
+            "while(true) {}", "while (a < b) do()", "while (check()) {a() i = i + 1 invoke()}",
+            "while(true) {};", "while (a < b) do();", "while (check()) {a(); i = i + 1; invoke();};"
+        };
 
-        var expression = ExpressionsParser.Parse(text);
-        
-        if (expression.Error is not null)
-            _testOutputHelper.WriteLine(expression.Error.Message);
-        
-        Assert.NotNull(expression.Value);
-        Assert.Null(expression.Error);
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
+    }
+    
+    [Fact]
+    public void CanParseExpressionChain()
+    {
+        var texts = new[]
+        {
+            "1 + 2 + 3 + 4", "1 + 2 * 3 / 4", "(1 + 2) - 3 * 4", "(((12/6)-2)+5) < 0 || b() and check() == true",
+            "1 + 2 + 3 + 4;", "1 + 2 * 3 / 4;", "(1 + 2) - 3 * 4;", "(((12/6)-2)+5) < 0 || b() and check() == true;"
+        };
+
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
     }
 
     [Fact]

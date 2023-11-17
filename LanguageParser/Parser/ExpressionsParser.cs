@@ -492,6 +492,8 @@ public sealed class ExpressionsParser
                 SyntaxKind.RepeatExpression or
                 SyntaxKind.ForExpression or
                 SyntaxKind.ScopeExpression or 
+                SyntaxKind.True or 
+                SyntaxKind.False or
                 SyntaxKind.VariableExpression => Precedence.Primary,
             _ => throw new InvalidEnumArgumentException()
         };

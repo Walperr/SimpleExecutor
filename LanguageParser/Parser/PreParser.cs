@@ -21,14 +21,10 @@ internal sealed class PreParser
             _tokenStream.Tokens[^1].Kind is SyntaxKind.CloseBrace)
             return _tokenStream;
 
-        if (_tokenStream.Tokens[0].Kind is not SyntaxKind.OpenBrace &&
-            _tokenStream.Tokens[^1].Kind is not SyntaxKind.CloseBrace)
+        if (_tokenStream.Tokens[0].Kind is not SyntaxKind.OpenBrace)
             return new TokenStream(GetTokensWithBraces());
 
-        if (_tokenStream.Tokens[0].Kind is SyntaxKind.OpenBrace)
-            throw new ParseException("Expected '}'", _tokenStream.EOF.Range);
-        
-        throw new ParseException("Missing '{'", new StringRange(0, 1));
+        throw new ParseException("Expected '}'", _tokenStream.EOF.Range);
     }
 
     private IEnumerable<Token> GetTokensWithBraces()
