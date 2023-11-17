@@ -1,6 +1,7 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 using LanguageParser.Tokenizer;
+using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;
 
@@ -32,5 +33,15 @@ public sealed class RepeatExpression : ExpressionBase
         yield return OpenParenthesis;
         yield return Condition;
         yield return CloseParenthesis;
+    }
+
+    public override void Visit(ExpressionVisitor visitor)
+    {
+        visitor.VisitRepeat(this);
+    }
+
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    {
+        return visitor.VisitRepeat(this, state);
     }
 }

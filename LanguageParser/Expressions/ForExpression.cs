@@ -1,6 +1,7 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 using LanguageParser.Tokenizer;
+using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;
 
@@ -39,5 +40,15 @@ public sealed class ForExpression : ExpressionBase
             yield return Step;
         yield return CloseParenthesis;
         yield return Body;
+    }
+
+    public override void Visit(ExpressionVisitor visitor)
+    {
+        visitor.VisitFor(this);
+    }
+
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    {
+        return visitor.VisitFor(this, state);
     }
 }

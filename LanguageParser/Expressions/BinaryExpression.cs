@@ -1,5 +1,6 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
+using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;
 
@@ -21,5 +22,15 @@ public sealed class BinaryExpression : ExpressionBase
         yield return Left;
         yield return Operator;
         yield return Right;
+    }
+
+    public override void Visit(ExpressionVisitor visitor)
+    {
+        visitor.VisitBinary(this);
+    }
+
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    {
+        return visitor.VisitBinary(this, state);
     }
 }

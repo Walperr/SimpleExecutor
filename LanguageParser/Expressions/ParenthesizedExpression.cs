@@ -1,6 +1,7 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 using LanguageParser.Tokenizer;
+using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;
 
@@ -24,5 +25,15 @@ public sealed class ParenthesizedExpression : ExpressionBase
         yield return OpenParenthesis;
         yield return Expression;
         yield return CloseParenthesis;
+    }
+
+    public override void Visit(ExpressionVisitor visitor)
+    {
+        visitor.VisitParenthesized(this);
+    }
+
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    {
+        return visitor.VisitParenthesized(this, state);
     }
 }

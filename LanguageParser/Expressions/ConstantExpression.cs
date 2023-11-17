@@ -1,6 +1,7 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 using LanguageParser.Tokenizer;
+using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;
 
@@ -24,5 +25,15 @@ public sealed class ConstantExpression : ExpressionBase, ISyntaxElement
     public override IEnumerable<ISyntaxElement> GetAllElements()
     {
         yield return Token;
+    }
+
+    public override void Visit(ExpressionVisitor visitor)
+    {
+        visitor.VisitConstant(this);
+    }
+
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    {
+        return visitor.VisitConstant(this, state);
     }
 }

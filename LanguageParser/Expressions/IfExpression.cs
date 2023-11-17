@@ -1,6 +1,7 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 using LanguageParser.Tokenizer;
+using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;
 
@@ -39,5 +40,15 @@ public sealed class IfExpression : ExpressionBase
             yield return ElseToken;
         if (ElseBranch is not null)
             yield return ElseBranch;
+    }
+
+    public override void Visit(ExpressionVisitor visitor)
+    {
+        visitor.VisitIf(this);
+    }
+
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    {
+        return visitor.VisitIf(this, state);
     }
 }

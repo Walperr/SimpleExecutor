@@ -1,6 +1,7 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 using LanguageParser.Tokenizer;
+using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;
 
@@ -24,5 +25,15 @@ public sealed class VariableExpression : ExpressionBase
         
         if (AssignmentExpression is not null)
             yield return AssignmentExpression;
+    }
+
+    public override void Visit(ExpressionVisitor visitor)
+    {
+        visitor.VisitVariable(this);
+    }
+
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    {
+        return visitor.VisitVariable(this, state);
     }
 }
