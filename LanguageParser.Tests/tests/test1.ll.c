@@ -1,70 +1,65 @@
 number a;
-number b;
+number b = 0;
+number c = b;
 
-string arg1;
+string s = 'spgjwgjwe';
 
-string arg2 = "some string";
+bool isSomething;
 
-bool boolValue = false; 
-    
-someFunction(arg1, arg2);
-
-if (boolValue)
-    arg1 = someFunction2(arg);
-
-if (false)
-    a = someFunction3(arg);
-else
-    b = someFunction4(arg);
-
-if (predicat())
-    print("Hello, world");
-
-while(true)
-{
-    Function1();
-    Function2();
-    Function3();
-    number c = (4 + 3) * 2.5 - 38 / 2;
-}
-
-for (;;)
-{
-    ForBody();
-}
-
-repeat Expression() until (true)
-
-for (init(); i <= 23; i + 1)
-    ForBody();
-
-for (;i > 0;)
-{}
+bool isSomethingElse = true;
 
 {
-    Expression1();
-    Expression2();
+    number f = 0.023;
 
-    a + b + 4;
-}
+    string s1 = "jwgeogjw";
 
-if (1)
-    if (2)
-        DoSomething();
+    string s2;
+
+    if (false)
+        b = 4;
     else
-        if (3)
-            doOther();
-        else
-            print("String");
+        a = 34.3453 + b;
 
+    if (true)
+        b = 4;
+    else if (5 < 54)
+        a = 34.3453 + b;
 
-if (1)
-{
-    if (2)
-        DoSomething();
-    else
-        if (3)
-            doOther();
+    for (number i = 0; i <= 23; i = i + 1)
+    {
+        number j = 0;
+        s2 = "2ada";
+        j = j + 1;
+    }
+
+    for (i = 0; false; i = i + 1)
+    {
+        number j = 0;
+        s2 = "2ada" + s2;
+        j = j + 1;
+    }
+
+    number j = 0;
+
+    while (isSomethingElse)
+    {
+        s = "2ada" + s2;
+        j = j + 1;
+        bool t = false;
+
+        if (t == false)
+            {
+                t = true;
+            }
+
+        if (j == 10)
+            isSomethingElse = false;
+    }
 }
-else
-    print("String");
+
+{
+    number f = 3123.0232;
+    number g;
+    string str = "rref";
+    bool bebra = false;
+}

@@ -60,6 +60,7 @@ public abstract class ExpressionWalker : ExpressionVisitor
     public override void VisitVariable(VariableExpression expression)
     {
         if (expression.AssignmentExpression is not null) 
+            
             Visit(expression.AssignmentExpression);
     }
 

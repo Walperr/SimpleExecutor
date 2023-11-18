@@ -2,8 +2,27 @@ using System.Collections;
 
 namespace LanguageParser.Common;
 
-internal static class Extensions
+public static class Extensions
 {
+    public static ScopeNode? FindDescendant(this ScopeNode root, Func<ScopeNode, bool> predicate)
+    {
+        if (predicate(root))
+            return root;
+
+        foreach (var child in root.Children)
+        {
+            if (predicate(child))
+                return child;
+
+            var node = child.FindDescendant(predicate);
+
+            if (node is not null)
+                return node;
+        }
+
+        return null;
+    }
+    
     public static TAcc Aggregate<TAcc, T>(this IEnumerable<T>? source, Func<T, TAcc>? seedSelector,
         Func<TAcc, T, TAcc>? selector)
     {
