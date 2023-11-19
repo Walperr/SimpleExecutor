@@ -10,6 +10,12 @@ public class Variable
         Type = type;
     }
     
+    public Variable(string name, Type type, object value) : this(name, type)
+    {
+        IsDeclared = true;
+        SetValue(value);
+    }
+    
     public string Name { get; }
     
     public object? Value { get; private set; }
@@ -23,7 +29,7 @@ public class Variable
     [MemberNotNull(nameof(Value))]
     public void SetValue(object value)
     {
-        if (value.GetType() != Type)
+        if (!value.GetType().IsAssignableTo(Type))
             throw new InvalidOperationException($"Cannot set  {value.GetType()} value to variable of type {Type}");
         
         Value = value;

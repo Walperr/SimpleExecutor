@@ -1,4 +1,6 @@
+using LanguageInterpreter;
 using LanguageInterpreter.Execution;
+using LanguageParser.Common;
 using LanguageParser.Parser;
 using Xunit.Abstractions;
 
@@ -576,5 +578,101 @@ public class UnitTest1
             Assert.Equivalent(result, value.Value);
             _testOutputHelper.WriteLine(value.ToString());
         }
+    }
+
+    [Fact]
+    public void CanBuildInterpreter()
+    {
+        var printFunction = new Function("print",
+            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+        var printLineFunction = new Function("printLine",
+            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+
+        var piVariable = new Variable("PI", typeof(double), Math.PI);
+        var eVariable = new Variable("E", typeof(double), Math.E);
+        
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .WithPredefinedFunction(printFunction)
+            .WithPredefinedFunction(printLineFunction)
+            .WithPredefinedVariable(piVariable)
+            .WithPredefinedVariable(eVariable)
+            .Build();
+        
+        Assert.NotNull(interpreter);
+    }
+    
+    [Fact]
+    public void CanUsePredefinedFunctionsAndVariables()
+    {
+        var printFunction = new Function("print",
+            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+        var printLineFunction = new Function("printLine",
+            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+
+        var piVariable = new Variable("PI", typeof(double), Math.PI);
+        var eVariable = new Variable("E", typeof(double), Math.E);
+        
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .WithPredefinedFunction(printFunction)
+            .WithPredefinedFunction(printLineFunction)
+            .WithPredefinedVariable(piVariable)
+            .WithPredefinedVariable(eVariable)
+            .Build();
+        
+        Assert.NotNull(interpreter);
+
+        const string text =
+            "print('Hello, world')\nprint(PI)\nprintLine('print line')\nprintLine('E = ' + E)\nif (PI > E)\n\tprint(PI)\nelse\n\tprint(E)";
+
+        _testOutputHelper.WriteLine(text);
+        _testOutputHelper.WriteLine("\nresult:\n");
+        
+        interpreter.Initialize(text);
+        
+        if (interpreter.HasErrors)
+            _testOutputHelper.WriteLine(interpreter.Error.Message);
+        
+        Assert.False(interpreter.HasErrors);
+
+        var result = interpreter.Interpret();
+        
+        Assert.NotNull(result.Value);
+        Assert.Null(result.Error);
+    }
+    
+    [Fact]
+    public void CanUsePredefinedFunctionsAndVariablesInLoops()
+    {
+        var printFunction = new Function("print",
+            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+
+        var piVariable = new Variable("PI", typeof(double), Math.PI);
+        var eVariable = new Variable("E", typeof(double), Math.E);
+        
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .WithPredefinedFunction(printFunction)
+            .WithPredefinedVariable(piVariable)
+            .WithPredefinedVariable(eVariable)
+            .Build();
+        
+        Assert.NotNull(interpreter);
+
+        const string text =
+            "print(\"start\")\n\nnumber someNumber = 6\n\nfor (number i = 0; i < someNumber; i = i + 1)\n    print(\"current i = \" + i)\n\nwhile (i > someNumber / 2)\n{\n    print(i + \": PI still equals \" + PI)\n\n    i = i - 1\n}\n\nnumber j = 0\n\nrepeat\n{\n    print(\"Repeat print E\")\n    print(E)\n\n    j = j + 1\n} until (j >= 5)\n\nprint(\"done\")";
+
+        _testOutputHelper.WriteLine(text);
+        _testOutputHelper.WriteLine("\nresult:\n");
+        
+        interpreter.Initialize(text);
+        
+        if (interpreter.HasErrors)
+            _testOutputHelper.WriteLine(interpreter.Error.Message);
+        
+        Assert.False(interpreter.HasErrors);
+
+        var result = interpreter.Interpret();
+        
+        Assert.NotNull(result.Value);
+        Assert.Null(result.Error);
     }
 }

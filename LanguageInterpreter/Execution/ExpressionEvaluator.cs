@@ -14,7 +14,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
     private readonly List<SyntaxException> _errors = new();
     private readonly ScopeNode _rootScope;
 
-    public ExpressionEvaluator(ScopeNode rootScope)
+    internal ExpressionEvaluator(ScopeNode rootScope)
     {
         _rootScope = rootScope;
     }

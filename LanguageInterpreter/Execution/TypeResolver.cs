@@ -11,7 +11,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
     private readonly List<SyntaxException> _errors = new();
     private readonly ScopeNode _rootScope;
 
-    public TypeResolver(ScopeNode rootScope)
+    internal TypeResolver(ScopeNode rootScope)
     {
         _rootScope = rootScope;
     }
@@ -225,7 +225,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
             if (argType is null)
                 return null;
 
-            if (argType != function.ArgumentTypes[i])
+            if (!argType.IsAssignableTo(function.ArgumentTypes[i]))
             {
                 _errors.Add(new WrongFunctionArgumentException(argType, function.Name, expression.Arguments[i].Range));
                 return null;

@@ -20,7 +20,7 @@ public sealed class Function<T> : FunctionBase
     private readonly Func<IEnumerable<object>, T> _body;
     public IEnumerable<Variable> Arguments { get; }
 
-    public Function(string name, Variable[] arguments, Func<IEnumerable<object>,T> body)  : base(name, arguments.Select(o => o.GetType()))
+    public Function(string name, Variable[] arguments, Func<IEnumerable<object>,T> body)  : base(name, arguments.Select(o => o.Type))
     {
         _body = body;
         Arguments = arguments;
@@ -38,7 +38,7 @@ public sealed class Function : FunctionBase
 {
     private readonly Action<IEnumerable<object>> _body;
 
-    public Function(string name, IEnumerable<Variable> arguments, Action<IEnumerable<object>> body) : base(name, arguments.Select(o => o.GetType()))
+    public Function(string name, IEnumerable<Variable> arguments, Action<IEnumerable<object>> body) : base(name, arguments.Select(o => o.Type))
     {
         _body = body;
     }
