@@ -3,20 +3,34 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:SimpleExecutor.ViewModels"
+             xmlns:views="clr-namespace:SimpleExecutor.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="viewModels:MainViewModel"
              x:Class="SimpleExecutor.Views.MainView">
     <Grid RowDefinitions="*, Auto">
-        <TextBox Margin="2"
-                 AcceptsReturn="True"
-                 AcceptsTab="True"
-                 Text="{Binding Code}"
-                 TextAlignment="Left"/>
+        <Grid ColumnDefinitions="*, *">
+            <Border Grid.Column="0" 
+                    BorderThickness="1"
+                    BorderBrush="Gray"
+                    Margin="4,2,10,10"
+                    CornerRadius="3">
+                <views:DrawingCanvas DataContext="{Binding Executor}"/>
+            </Border>
+            <GridSplitter Grid.Column="0"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Stretch"
+                          Width="1"/>
+            <TextBox Grid.Column="1" Margin="2,2,4,10"
+                     BorderBrush="Gray"
+                     AcceptsReturn="True"
+                     AcceptsTab="True"
+                     Text="{Binding Code}"
+                     TextAlignment="Left"/>
+        </Grid>
         <GridSplitter Grid.Row="0"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Bottom"
-                      Height="1"    
-                      Background="Gray"/>
+                      Height="1"/>
         <DockPanel Grid.Row="1" LastChildFill="True"
                     Margin="2">
             <Button DockPanel.Dock="Left"

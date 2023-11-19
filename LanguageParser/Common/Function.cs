@@ -17,10 +17,10 @@ public abstract class FunctionBase
 
 public sealed class Function<T> : FunctionBase
 {
-    private readonly Func<IEnumerable<object>, T> _body;
+    private readonly Func<IList<object>, T> _body;
     public IEnumerable<Variable> Arguments { get; }
 
-    public Function(string name, Variable[] arguments, Func<IEnumerable<object>,T> body)  : base(name, arguments.Select(o => o.Type))
+    public Function(string name, Variable[] arguments, Func<IList<object>,T> body)  : base(name, arguments.Select(o => o.Type))
     {
         _body = body;
         Arguments = arguments;
@@ -28,7 +28,7 @@ public sealed class Function<T> : FunctionBase
 
     public override Type ReturnType => typeof(T);
 
-    public T Invoke(IEnumerable<object> arguments)
+    public T Invoke(IList<object> arguments)
     {
         return _body.Invoke(arguments);
     }
@@ -36,16 +36,16 @@ public sealed class Function<T> : FunctionBase
 
 public sealed class Function : FunctionBase
 {
-    private readonly Action<IEnumerable<object>> _body;
+    private readonly Action<IList<object>> _body;
 
-    public Function(string name, IEnumerable<Variable> arguments, Action<IEnumerable<object>> body) : base(name, arguments.Select(o => o.Type))
+    public Function(string name, IEnumerable<Variable> arguments, Action<IList<object>> body) : base(name, arguments.Select(o => o.Type))
     {
         _body = body;
     }
 
     public override Type ReturnType => typeof(Empty);
 
-    public void Invoke(IEnumerable<object> arguments)
+    public void Invoke(IList<object> arguments)
     {
         _body.Invoke(arguments);
     }
