@@ -6,13 +6,14 @@ using LanguageParser.Visitors;
 
 namespace LanguageInterpreter.Execution;
 
-public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Type>>
+public sealed class TypeResolver : ExpressionVisitor<Type?>
 {
-    private readonly ScopeNode _scopeTree;
+    private readonly List<SyntaxException> _errors = new();
+    private readonly ScopeNode _rootScope;
 
-    public TypeResolver(ScopeNode scopeTree)
+    public TypeResolver(ScopeNode rootScope)
     {
-        _scopeTree = scopeTree;
+        _rootScope = rootScope;
     }
 
     public static Result<SyntaxException, Type> Resolve(ScopeNode tree)
@@ -22,10 +23,22 @@ public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Typ
 
     public Result<SyntaxException, Type> Resolve()
     {
-        return Visit(_scopeTree.Scope);
+        try
+        {
+            var type = Visit(_rootScope.Scope);
+
+            if (type is null)
+                return _errors.First();
+
+            return type;
+        }
+        catch (Exception e)
+        {
+            return new UnhandledInterpreterException(e);
+        }
     }
 
-    public override Result<SyntaxException, Type> VisitConstant(ConstantExpression expression)
+    public override Type? VisitConstant(ConstantExpression expression)
     {
         if (expression.IsBool)
             return typeof(bool);
@@ -36,21 +49,24 @@ public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Typ
 
         var variable = GetVariable(expression, expression.Lexeme);
 
-        if (variable is null)
-            return new UndeclaredVariableException(expression.Lexeme, expression.Range);
+        if (variable is not null)
+            return variable.Type;
 
-        return variable.Type;
+        _errors.Add(new UndeclaredVariableException(expression.Lexeme, expression.Range));
+        return null;
     }
 
-    public override Result<SyntaxException, Type> VisitBinary(BinaryExpression expression)
+    public override Type? VisitBinary(BinaryExpression expression)
     {
         var leftType = Visit(expression.Left);
-        if (leftType.IsError)
-            return leftType.Error;
+
+        if (leftType is null)
+            return null;
 
         var rightType = Visit(expression.Right);
-        if (rightType.IsError)
-            return rightType.Error;
+
+        if (rightType is null)
+            return null;
 
         switch (expression.Kind)
         {
@@ -58,53 +74,69 @@ public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Typ
             case SyntaxKind.MultiplyExpression:
             case SyntaxKind.SubtractExpression:
 
-                if (leftType != typeof(double) || rightType != typeof(double))
-                    return new IncompatibleOperandsException(expression.Operator);
+                if (leftType == typeof(double) && rightType == typeof(double))
+                    return typeof(double);
 
-                return typeof(double);
+                _errors.Add(new IncompatibleOperandsException(expression.Operator));
+                return null;
 
             case SyntaxKind.AddExpression:
 
                 if (leftType == typeof(string) || rightType == typeof(string))
                     return typeof(string);
 
-                if (leftType == typeof(bool) || rightType == typeof(bool))
-                    return new UnexpectedOperandsException(expression.Operator, typeof(bool));
-
                 if (leftType == typeof(double) && rightType == typeof(double))
                     return typeof(double);
 
-                return new ExpectedOtherTypeException(expression.Right, rightType.Value, leftType.Value);
+                if (leftType == typeof(bool) || rightType == typeof(bool))
+                {
+                    _errors.Add(new UnexpectedOperandsException(expression.Operator, typeof(bool)));
+                    return null;
+                }
+
+                _errors.Add(new ExpectedOtherTypeException(expression.Right, rightType, leftType));
+                return null;
 
             case SyntaxKind.RelationalExpression:
 
-                if (leftType != typeof(double) || rightType != typeof(double))
-                    return new IncompatibleOperandsException(expression.Operator, typeof(double));
+                if (leftType == typeof(double) && rightType == typeof(double))
+                    return typeof(bool);
 
-                return typeof(bool);
+                _errors.Add(new IncompatibleOperandsException(expression.Operator, typeof(double)));
+                return null;
 
             case SyntaxKind.AndExpression:
             case SyntaxKind.OrExpression:
 
-                if (leftType != typeof(bool) || rightType != typeof(bool))
-                    return new IncompatibleOperandsException(expression.Operator, typeof(bool));
+                if (leftType == typeof(bool) && rightType == typeof(bool))
+                    return typeof(bool);
 
-                return typeof(bool);
+                _errors.Add(new IncompatibleOperandsException(expression.Operator, typeof(bool)));
+                return null;
 
             case SyntaxKind.AssignmentExpression:
                 if (expression.Left is ConstantExpression constant)
                 {
                     if (constant.IsBool || constant.IsNumber || constant.IsString)
-                        return new InterpreterException($"Expected variable, but got {constant.Lexeme}",
-                            constant.Range);
+                    {
+                        _errors.Add(new InterpreterException($"Expected variable, but got {constant.Lexeme}",
+                            constant.Range));
+                        return null;
+                    }
 
                     var variable = GetVariable(expression, constant.Lexeme);
 
                     if (variable is null)
-                        return new UndeclaredVariableException(constant.Lexeme, expression.Range);
+                    {
+                        _errors.Add(new UndeclaredVariableException(constant.Lexeme, expression.Range));
+                        return null;
+                    }
 
                     if (variable.Type != rightType)
-                        return new ExpectedOtherTypeException(expression.Right, rightType.Value, variable.Type);
+                    {
+                        _errors.Add(new ExpectedOtherTypeException(expression.Right, rightType, variable.Type));
+                        return null;
+                    }
 
                     return variable.Type;
                 }
@@ -114,95 +146,117 @@ public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Typ
                 return typeof(bool);
         }
 
-        return new InterpreterException($"Unknown operator {expression.Operator.Lexeme}", expression.Range);
+        _errors.Add(new InterpreterException($"Unknown operator {expression.Operator.Lexeme}", expression.Range));
+        return null;
     }
 
-    public override Result<SyntaxException, Type> VisitFor(ForExpression expression)
+    public override Type? VisitFor(ForExpression expression)
     {
         var conditionType = expression.Condition is null
             ? typeof(bool)
             : Visit(expression.Condition);
 
-        if (conditionType.IsError)
-            return conditionType.Error;
+        if (conditionType is null)
+            return null;
 
         if (conditionType != typeof(bool))
-            return new ExpectedOtherTypeException(expression.Condition!, conditionType.Value, typeof(bool));
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Condition!, conditionType, typeof(bool)));
+            return null;
+        }
 
         return Visit(expression.Body);
     }
 
-    public override Result<SyntaxException, Type> VisitIf(IfExpression expression)
+    public override Type? VisitIf(IfExpression expression)
     {
         var conditionType = Visit(expression.Condition);
 
-        if (conditionType.IsError)
-            return conditionType.Error;
+        if (conditionType is null)
+            return null;
 
         if (conditionType != typeof(bool))
-            return new ExpectedOtherTypeException(expression.Condition, conditionType.Value, typeof(bool));
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Condition, conditionType, typeof(bool)));
+            return null;
+        }
 
         var type = Visit(expression.ThenBranch);
 
-        if (type.IsError)
-            return type.Error;
+        if (type is null)
+            return null;
 
         var elseType = expression.ElseBranch is not null
             ? Visit(expression.ElseBranch)
             : type;
 
-        if (elseType.IsError)
-            return elseType.Error;
+        if (elseType is null)
+            return null;
 
         if (type != elseType)
-            return new ExpectedOtherTypeException(expression.ElseBranch!, elseType.Value, type.Value);
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.ElseBranch!, elseType, type));
+            return null;
+        }
 
         return type;
     }
 
-    public override Result<SyntaxException, Type> VisitInvocation(InvocationExpression expression)
+    public override Type? VisitInvocation(InvocationExpression expression)
     {
         if (expression.Function is not ConstantExpression constant)
-            return new InterpreterException("expected function name", expression.Function.Range);
+        {
+            _errors.Add(new InterpreterException("expected function name", expression.Function.Range));
+            return null;
+        }
 
         var function = GetFunction(expression, constant.Lexeme);
 
         if (function is null)
-            return new UndeclaredFunctionException(constant.Lexeme, constant.Range);
+        {
+            _errors.Add(new UndeclaredFunctionException(constant.Lexeme, constant.Range));
+            return null;
+        }
 
         for (var i = 0; i < function.ArgumentTypes.Length; i++)
         {
             var argType = Visit(expression.Arguments[i]);
 
-            if (argType.IsError)
-                return argType.Error;
+            if (argType is null)
+                return null;
 
             if (argType != function.ArgumentTypes[i])
-                return new WrongFunctionArgumentException(argType.Value, function.Name, expression.Arguments[i].Range);
+            {
+                _errors.Add(new WrongFunctionArgumentException(argType, function.Name, expression.Arguments[i].Range));
+                return null;
+            }
         }
 
         return function.ReturnType;
     }
 
-    public override Result<SyntaxException, Type> VisitParenthesized(ParenthesizedExpression expression)
+    public override Type? VisitParenthesized(ParenthesizedExpression expression)
     {
         return Visit(expression.Expression);
     }
 
-    public override Result<SyntaxException, Type> VisitRepeat(RepeatExpression expression)
+    public override Type? VisitRepeat(RepeatExpression expression)
     {
         var conditionType = Visit(expression.Condition);
 
-        if (conditionType.IsError)
-            return conditionType.Error;
+        if (conditionType is null)
+            return null;
 
         if (conditionType != typeof(bool))
-            return new ExpectedOtherTypeException(expression.Condition, conditionType.Value, typeof(bool));
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Condition, conditionType, typeof(bool)));
+            return null;
+        }
 
         return Visit(expression.Body);
     }
 
-    public override Result<SyntaxException, Type> VisitScope(ScopeExpression expression)
+    public override Type? VisitScope(ScopeExpression expression)
     {
         var type = typeof(Empty);
 
@@ -210,23 +264,26 @@ public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Typ
         {
             var result = Visit(innerExpression);
 
-            if (result.IsError)
-                return result.Error;
+            if (result is null)
+                return null;
 
-            type = result.Value;
+            type = result;
         }
 
         return type;
     }
 
-    public override Result<SyntaxException, Type> VisitVariable(VariableExpression expression)
+    public override Type? VisitVariable(VariableExpression expression)
     {
         var name = expression.NameToken.Lexeme;
 
         var variable = GetVariable(expression, name);
 
         if (variable is null)
-            return new UndeclaredVariableException(name, expression.Range);
+        {
+            _errors.Add(new UndeclaredVariableException(name, expression.Range));
+            return null;
+        }
 
         var assignmentType = variable.Type;
 
@@ -234,36 +291,43 @@ public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Typ
         {
             var result = Visit(expression.AssignmentExpression);
 
-            if (result.IsError)
-                return result.Error;
+            if (result is null)
+                return null;
 
-            assignmentType = result.Value;
+            assignmentType = result;
         }
 
         if (variable.Type != assignmentType)
-            return new ExpectedOtherTypeException(expression.AssignmentExpression!, assignmentType, variable.Type);
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.AssignmentExpression!, assignmentType,
+                variable.Type));
+            return null;
+        }
 
         return variable.Type;
     }
 
-    public override Result<SyntaxException, Type> VisitWhile(WhileExpression expression)
+    public override Type? VisitWhile(WhileExpression expression)
     {
         var conditionType = Visit(expression.Condition);
 
-        if (conditionType.IsError)
-            return conditionType.Error;
+        if (conditionType is null)
+            return null;
 
         if (conditionType != typeof(bool))
-            return new ExpectedOtherTypeException(expression.Condition, conditionType.Value, typeof(bool));
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Condition, conditionType, typeof(bool)));
+            return null;
+        }
 
         return Visit(expression.Body);
     }
 
     private Variable? GetVariable(ExpressionBase expression, string name)
     {
-        var scope = ScopeResolver.FindScope(expression, _scopeTree.Scope);
+        var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
 
-        var node = _scopeTree.FindDescendant(node => node.Scope == scope);
+        var node = _rootScope.FindDescendant(node => node.Scope == scope);
 
         var variable = node?.GetVariableIncludingAncestors(name);
 
@@ -272,9 +336,9 @@ public sealed class TypeResolver : ExpressionVisitor<Result<SyntaxException, Typ
 
     private FunctionBase? GetFunction(ExpressionBase expression, string name)
     {
-        var scope = ScopeResolver.FindScope(expression, _scopeTree.Scope);
+        var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
 
-        var node = _scopeTree.FindDescendant(node => node.Scope == scope);
+        var node = _rootScope.FindDescendant(node => node.Scope == scope);
 
         var function = node?.GetFunctionIncludingAncestors(name);
 

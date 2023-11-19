@@ -81,3 +81,10 @@ public sealed class UnexpectedOperatorException : InterpreterException
     {
     }
 }
+
+public sealed class UnhandledInterpreterException : InterpreterException
+{
+    internal UnhandledInterpreterException(Exception exception) : base(exception.Message, default)
+    {
+    }
+}
