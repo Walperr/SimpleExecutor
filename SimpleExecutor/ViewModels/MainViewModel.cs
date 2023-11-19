@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia.Media;
 using LanguageInterpreter;
 using LanguageParser;
 using LanguageParser.Common;
@@ -69,7 +70,14 @@ public class MainViewModel : ViewModelBase
             args =>
             {
                 StepDuration = (int) (double) args[0];
-            }); 
+            });
+
+        var setColorFunction = new Function("setColor", new[] {new Variable("color", typeof(string))}, args =>
+        {
+            var brush = Brush.Parse((string) args[0]);
+
+            Executor.TraceColor = brush;
+        });
 
         _interpreter = InterpreterBuilder.CreateBuilder()
             .WithPredefinedFunction(printFunction)
@@ -82,10 +90,11 @@ public class MainViewModel : ViewModelBase
             .WithPredefinedFunction(jumpFunction)
             .WithPredefinedFunction(delayFunction)
             .WithPredefinedFunction(setStepDurationFunction)
+            .WithPredefinedFunction(setColorFunction)
             .Build();
     }
-    
-    private int StepDuration { get; set; }
+
+    private int StepDuration { get; set; } = 100;
 
     public Executor Executor { get; } = new();
     
@@ -121,3 +130,26 @@ public class MainViewModel : ViewModelBase
             Output += "\n Result:\n" + value.Value;
     });
 }
+
+// setColor("Transparent")
+// jump(350,310)
+//
+// number j = 0
+//
+// for(number i = 1; i < 1000; i = i + 1)
+// {
+//     rotate(15)
+//     move(i)
+//
+//     if (j == 2)
+//         setColor("red")
+//     else if (j == 1)
+//         setColor("blue")
+//     else
+//         setColor("green")
+//
+//     j = j + 1
+//
+//     if (j == 3)
+//         j = 0
+// }

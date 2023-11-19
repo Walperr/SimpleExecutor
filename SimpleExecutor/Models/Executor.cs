@@ -1,5 +1,6 @@
 using System;
 using Avalonia;
+using Avalonia.Media;
 using ReactiveUI;
 using SimpleExecutor.ViewModels;
 
@@ -10,6 +11,8 @@ public sealed class Executor : ViewModelBase
     private Point _position;
     private double _angle;
 
+    public IBrush TraceColor { get; set; } = Brushes.Blue;
+    
     public Point Position
     {
         get => _position;
