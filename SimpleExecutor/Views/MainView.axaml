@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:SimpleExecutor.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="viewModels:MainViewModel"
+             x:Class="SimpleExecutor.Views.MainView">
+    <Grid RowDefinitions="*, Auto">
+        <TextBox Margin="2"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 Text="{Binding Code}"
+                 TextAlignment="Left"/>
+        <GridSplitter Grid.Row="0"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Bottom"
+                      Height="1"    
+                      Background="Gray"/>
+        <DockPanel Grid.Row="1" LastChildFill="True"
+                    Margin="2">
+            <Button DockPanel.Dock="Left"
+                    Content="Run"
+                    Command="{Binding Interpret}"
+                    VerticalAlignment="Top"/>
+            <TextBox Text="{Binding Output}"
+                     IsReadOnly="True"
+                     Margin="5"
+                     TextAlignment="Left"
+                     TextWrapping="Wrap"/>
+        </DockPanel>
+    </Grid>
+</UserControl>
