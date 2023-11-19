@@ -47,8 +47,8 @@ public sealed class IfExpression : ExpressionBase
         visitor.VisitIf(this);
     }
 
-    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    public override T Visit<T>(ExpressionVisitor<T> visitor)
     {
-        return visitor.VisitIf(this, state);
+        return visitor.VisitIf(this);
     }
 }

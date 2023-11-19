@@ -2,9 +2,9 @@ using LanguageParser.Tokenizer;
 
 namespace LanguageParser.Common;
 
-public class ParseException : Exception
+public class SyntaxException : Exception
 {
-    internal ParseException(string message, StringRange range) : base(message)
+    protected internal SyntaxException(string message, StringRange range) : base(message)
     {
         Range = range;
     }
@@ -12,7 +12,7 @@ public class ParseException : Exception
     public StringRange Range { get; }
 }
 
-public sealed class ExpectedOtherTokenException : ParseException
+public sealed class ExpectedOtherTokenException : SyntaxException
 {
     internal ExpectedOtherTokenException(Token token, params SyntaxKind[] expected) : base(
         GetErrorMessage(token, expected), token.Range)
@@ -29,23 +29,31 @@ public sealed class ExpectedOtherTokenException : ParseException
     }
 }
 
-public sealed class UnexpectedTokenException : ParseException
+public sealed class UnexpectedTokenException : SyntaxException
 {
     internal UnexpectedTokenException(Token token) : base($"Unexpected token: '{token.Lexeme}'", token.Range)
     {
     }
 }
 
-public sealed class UnexpectedEofException : ParseException
+public sealed class UnexpectedEofException : SyntaxException
 {
     internal UnexpectedEofException(StringRange range) : base("Unexpected end of file", range)
     {
     }
 }
 
-public sealed class UnhandledParserException : ParseException
+public sealed class UnhandledParserException : SyntaxException
 {
     internal UnhandledParserException(Exception exception) : base(exception.Message, default)
+    {
+    }
+}
+
+public sealed class VariableAlreadyDeclaredException : SyntaxException
+{
+    internal VariableAlreadyDeclaredException(string variableName, StringRange range) : base(
+        $"Variable already declared in this scope. {variableName}", range)
     {
     }
 }

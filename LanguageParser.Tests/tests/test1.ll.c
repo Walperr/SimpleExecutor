@@ -9,7 +9,7 @@ bool isSomething;
 bool isSomethingElse = true;
 
 {
-    number f = 0.023;
+    number f = 5.56;
 
     string s1 = "jwgeogjw";
 
@@ -43,11 +43,11 @@ bool isSomethingElse = true;
 
     while (isSomethingElse)
     {
-        s = "2ada" + s2;
+        s = "2ada" + 5.65;
         j = j + 1;
         bool t = false;
 
-        if (t == false)
+        if (t = false)
             {
                 t = true;
             }

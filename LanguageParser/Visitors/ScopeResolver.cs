@@ -50,6 +50,6 @@ public sealed class ScopeResolver : ExpressionWalker
         var prevScope = _currentScope;
         _currentScope = expression;
         base.VisitScope(expression);
-        _currentScope = prevScope;
+        _currentScope = prevScope; //reset previous scope when exit from current
     }
 }

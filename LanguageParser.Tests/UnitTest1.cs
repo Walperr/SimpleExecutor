@@ -420,8 +420,15 @@ public class UnitTest1
         Assert.NotNull(scopeNode);
 
         var type = TypeResolver.Resolve(scopeNode);
+
+        if (type.IsError)
+        {
+            _testOutputHelper.WriteLine(type.Error.Message);
+            _testOutputHelper.WriteLine(type.Error.Range.ToString());
+        }
         
-        Assert.NotNull(type);
+        Assert.NotNull(type.Value);
+        Assert.Null(type.Error);
         
         _testOutputHelper.WriteLine(type.ToString());
     }
@@ -445,14 +452,129 @@ public class UnitTest1
 
         var type = TypeResolver.Resolve(scopeNode);
         
-        Assert.NotNull(type);
+        if (type.IsError)
+        {
+            _testOutputHelper.WriteLine(type.Error.Message);
+            _testOutputHelper.WriteLine(type.Error.Range.ToString());
+        }
+        
+        Assert.NotNull(type.Value);
+        Assert.Null(type.Error);
         
         _testOutputHelper.WriteLine(type.ToString());
 
         var value = ExpressionEvaluator.Evaluate(scopeNode);
         
-        Assert.NotNull(value);
+        Assert.NotNull(value.Value);
+        Assert.Null(value.Error);
         
-        _testOutputHelper.WriteLine(value.ToString());
+        _testOutputHelper.WriteLine(value.Value.ToString());
+    }
+    
+    [Fact]
+    public void CanEvaluateBinaryExpressions()
+    {
+        (string text, object result)[] texts =
+        {
+            (text: "1 + 1", result: 1.0 + 1.0),
+            (text: "number a = 142 number b = 23.2523 a + b", result: 142 + 23.2523),
+            (text: "4 - 2.4", result: 4 - 2.4),
+            (text: "number b = 23.2523 2 * b", result: 2 * 23.2523),
+            (text: "number b = 2 2 == b", result: true),
+            (text: "number a = 1.0002 number b = 1.002 a = b", result: 1.002),
+            (text: "1 == 2", result: false),
+            (text: "45 / 0.5", result: 45 / 0.5),
+            (text: "true or false", true || false),
+            (text: "true and false", result: true && false)
+        };
+
+        foreach (var (text, result) in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+            
+            var scopeNode = DeclarationsCollector.Collect(expression.Value);
+
+            Assert.NotNull(scopeNode);
+
+            var type = TypeResolver.Resolve(scopeNode);
+        
+            if (type.IsError)
+            {
+                _testOutputHelper.WriteLine(type.Error.Message);
+                _testOutputHelper.WriteLine(type.Error.Range.ToString());
+            }
+        
+            Assert.NotNull(type.Value);
+            Assert.Null(type.Error);
+        
+            _testOutputHelper.WriteLine(type.ToString());
+
+            var value = ExpressionEvaluator.Evaluate(scopeNode);
+        
+            Assert.NotNull(value.Value);
+            Assert.Null(value.Error);
+
+            Assert.Equivalent(result, value.Value);
+            _testOutputHelper.WriteLine(value.ToString());
+        }
+    }
+    
+    [Fact]
+    public void CanEvaluateExpressionChains()
+    {
+        (string text, object result)[] texts =
+        {
+            (text: "(1 + 1) * 5.65 - 23.5 / 5", result: (1 + 1) * 5.65 - 23.5 / 5),
+            (text: "number a = 142\nnumber b = 23.2523\na + b * 53 - 6.23", result: 142 + 23.2523 * 53 - 6.23),
+            (text: "4 - 2.4 / 2 * 6 - 48.023 * (234 + ((52 + 56) - 28))", result: 4 - 2.4 / 2 * 6 - 48.023 * (234 + ((52 + 56) - 28))),
+            (text: "4 * 28 - 45 * (2 - 36) < 528 * 14.65 && 32 >= 16 || 10 == 5 * (1 / 0.5)", 4 * 28 - 45 * (2 - 36) < 528 * 14.65 && 32 >= 16 || 10 == 5 * (1 / 0.5)),
+            (text: "4 * 28 - 45 > 0 || ((2 - 36) < 528 * 14.65) && (32 >= 16 || 10 == 5 * (1 / 0.5))", result: 4 * 28 - 45 > 0 || ((2 - 36) < 528 * 14.65) && (32 >= 16 || 10 == 5 * (1 / 0.5)))
+        };
+
+        foreach (var (text, result) in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+            
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+            
+            var scopeNode = DeclarationsCollector.Collect(expression.Value);
+
+            Assert.NotNull(scopeNode);
+
+            var type = TypeResolver.Resolve(scopeNode);
+        
+            if (type.IsError)
+            {
+                _testOutputHelper.WriteLine(type.Error.Message);
+                _testOutputHelper.WriteLine(type.Error.Range.ToString());
+            }
+        
+            Assert.NotNull(type.Value);
+            Assert.Null(type.Error);
+        
+            _testOutputHelper.WriteLine(type.ToString());
+
+            var value = ExpressionEvaluator.Evaluate(scopeNode);
+        
+            Assert.NotNull(value.Value);
+            Assert.Null(value.Error);
+
+            Assert.Equivalent(result, value.Value);
+            _testOutputHelper.WriteLine(value.ToString());
+        }
     }
 }

@@ -21,9 +21,11 @@ public readonly struct Result<TError, TValue>
     public TValue? Value { get; }
 
     [MemberNotNullWhen(true, nameof(Error))]
+    [MemberNotNullWhen(false, nameof(Value))]
     public bool IsError => Error is not null;
 
     [MemberNotNullWhen(true, nameof(Value))]
+    [MemberNotNullWhen(false, nameof(Error))]
     public bool IsValue => Value is not null;
 
     public bool IsDefault => Error is null && Value is null;

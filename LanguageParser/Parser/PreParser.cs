@@ -13,9 +13,9 @@ internal sealed class PreParser
         _tokenStream = tokenStream;
     }
 
-    internal static TokenStream PreParse(TokenStream stream) => new PreParser(stream).PreParse();
+    internal static Result<SyntaxException, TokenStream> PreParse(TokenStream stream) => new PreParser(stream).PreParse();
     
-    private TokenStream PreParse()
+    private Result<SyntaxException, TokenStream> PreParse()
     {
         if (_tokenStream.Tokens[0].Kind is SyntaxKind.OpenBrace &&
             _tokenStream.Tokens[^1].Kind is SyntaxKind.CloseBrace)
@@ -24,7 +24,7 @@ internal sealed class PreParser
         if (_tokenStream.Tokens[0].Kind is not SyntaxKind.OpenBrace)
             return new TokenStream(GetTokensWithBraces());
 
-        throw new ParseException("Expected '}'", _tokenStream.EOF.Range);
+        return new ExpectedOtherTokenException(_tokenStream.EOF, SyntaxKind.CloseBrace);
     }
 
     private IEnumerable<Token> GetTokensWithBraces()

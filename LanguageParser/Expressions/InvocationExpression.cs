@@ -36,8 +36,8 @@ public sealed class InvocationExpression : ExpressionBase
         visitor.VisitInvocation(this);
     }
 
-    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
+    public override T Visit<T>(ExpressionVisitor<T> visitor)
     {
-        return visitor.VisitInvocation(this, state);
+        return visitor.VisitInvocation(this);
     }
 }

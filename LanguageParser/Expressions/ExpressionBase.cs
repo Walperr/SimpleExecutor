@@ -48,5 +48,5 @@ public abstract class ExpressionBase : ISyntaxElement
     public bool IsExpression => true;
     public abstract IEnumerable<ISyntaxElement> GetAllElements();
     public abstract void Visit(ExpressionVisitor visitor);
-    public abstract T Visit<T, TState>(ExpressionVisitor<T,TState> visitor, TState state);
+    public abstract T Visit<T>(ExpressionVisitor<T> visitor);
 }

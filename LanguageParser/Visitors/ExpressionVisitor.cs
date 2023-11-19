@@ -47,27 +47,27 @@ public abstract class ExpressionVisitor
     }
 }
 
-public abstract class ExpressionVisitor<T, TState>
+public abstract class ExpressionVisitor<T>
 {
-    public virtual T Visit(ExpressionBase expression, TState state) => expression.Visit(this, state);
+    public virtual T Visit(ExpressionBase expression) => expression.Visit(this);
 
-    public abstract T VisitBinary(BinaryExpression expression, TState state);
+    public abstract T VisitBinary(BinaryExpression expression);
 
-    public abstract T VisitConstant(ConstantExpression expression, TState state);
+    public abstract T VisitConstant(ConstantExpression expression);
                     
-    public abstract T VisitFor(ForExpression expression, TState state);
+    public abstract T VisitFor(ForExpression expression);
                     
-    public abstract T VisitIf(IfExpression expression, TState state);
+    public abstract T VisitIf(IfExpression expression);
                     
-    public abstract T VisitInvocation(InvocationExpression expression, TState state);
+    public abstract T VisitInvocation(InvocationExpression expression);
                     
-    public abstract T VisitParenthesized(ParenthesizedExpression expression, TState state);
+    public abstract T VisitParenthesized(ParenthesizedExpression expression);
                     
-    public abstract T VisitRepeat(RepeatExpression expression, TState state);
+    public abstract T VisitRepeat(RepeatExpression expression);
                     
-    public abstract T VisitScope(ScopeExpression expression, TState state);
+    public abstract T VisitScope(ScopeExpression expression);
                     
-    public abstract T VisitVariable(VariableExpression expression, TState state);
+    public abstract T VisitVariable(VariableExpression expression);
                     
-    public abstract T VisitWhile(WhileExpression expression, TState state);
+    public abstract T VisitWhile(WhileExpression expression);
 }

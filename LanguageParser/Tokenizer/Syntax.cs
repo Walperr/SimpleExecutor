@@ -52,7 +52,7 @@ internal static class Syntax
             SyntaxKind.Plus => SyntaxKind.AddExpression,
             SyntaxKind.Minus => SyntaxKind.SubtractExpression,
             SyntaxKind.Asterisk => SyntaxKind.MultiplyExpression,
-            SyntaxKind.Slash => SyntaxKind.MultiplyExpression,
+            SyntaxKind.Slash => SyntaxKind.DivideExpression,
             SyntaxKind.EqualsSign => SyntaxKind.AssignmentOperator,
             SyntaxKind.EqualityOperator => SyntaxKind.EqualityExpression,
             SyntaxKind.ConditionalAndOperator or SyntaxKind.And => SyntaxKind.AndExpression,

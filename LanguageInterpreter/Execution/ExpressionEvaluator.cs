@@ -1,4 +1,5 @@
 using System.Globalization;
+using LanguageInterpreter.Common;
 using LanguageParser;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
@@ -8,7 +9,7 @@ using LanguageParser.Visitors;
 
 namespace LanguageInterpreter.Execution;
 
-public sealed class ExpressionEvaluator : ExpressionVisitor<object, object>
+public sealed class ExpressionEvaluator : ExpressionVisitor<Result<SyntaxException, object>>
 {
     private readonly ScopeNode _rootScope;
 
@@ -17,74 +18,17 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object, object>
         _rootScope = rootScope;
     }
 
-    public static object Evaluate(ScopeNode root)
+    public static Result<SyntaxException, object> Evaluate(ScopeNode root)
     {
         return new ExpressionEvaluator(root).Evaluate();
     }
 
-    public object Evaluate()
+    public Result<SyntaxException, object> Evaluate()
     {
-        return Visit(_rootScope.Scope, null!);
+        return Visit(_rootScope.Scope);
     }
 
-    public override object VisitBinary(BinaryExpression expression, object state)
-    {
-        if (expression.Kind is SyntaxKind.AssignmentExpression)
-        {
-            if (expression.Left is ConstantExpression constant)
-            {
-                var variable = GetVariable(expression, constant.Lexeme);
-
-                if (!variable.IsDeclared)
-                    throw new Exception($"variable {variable.Name} is undeclared");
-
-                variable.SetValue(Visit(expression.Right, state));
-
-                return variable.Value;
-            }
-
-            throw new Exception("Cannot assign value to expression");
-        }
-        
-        var left = Visit(expression.Left, state);
-        var right = Visit(expression.Right, state);
-
-        switch (expression.Kind)
-        {
-            case SyntaxKind.DivideExpression:
-                return (double)left / (double)right;
-            case SyntaxKind.MultiplyExpression:
-                return (double)left * (double)right;
-            case SyntaxKind.SubtractExpression:
-                return (double)left - (double)right;
-            case SyntaxKind.AddExpression:
-            {
-                if (left is double ld && right is double rd)
-                    return ld + rd;
-
-                return left.ToString() + right.ToString();
-            }
-            case SyntaxKind.RelationalExpression:
-                return expression.Operator.Lexeme switch
-                {
-                    ">" => (double)left > (double)right,
-                    "<" => (double)left < (double)right,
-                    ">=" => (double)left >= (double)right,
-                    "<=" => (double)left <= (double)right,
-                    _ => throw new Exception()
-                };
-            case SyntaxKind.AndExpression:
-                return (bool)left && (bool)right;
-            case SyntaxKind.OrExpression:
-                return (bool)left || (bool)right;
-            case SyntaxKind.EqualityExpression:
-                return left.Equals(right);
-        }
-
-        throw new Exception("unknown operation");
-    }
-
-    public override object VisitConstant(ConstantExpression expression, object state)
+    public override Result<SyntaxException, object> VisitConstant(ConstantExpression expression)
     {
         if (expression.IsBool)
             return bool.Parse(expression.Lexeme);
@@ -96,15 +40,271 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object, object>
         var variable = GetVariable(expression, expression.Lexeme);
 
         if (variable is null || !variable.IsDeclared)
-            throw new Exception($"undeclared variable {expression.Lexeme}");
+            return new UndeclaredVariableException(expression.Lexeme, expression.Range);
 
         if (variable.IsUnset)
-            throw new Exception($"cannot use uninitialized variable {expression.Lexeme}");
+            return new UninitializedVariableException(expression.Lexeme, expression.Range);
 
         return variable.Value;
     }
 
-    private Variable GetVariable(ExpressionBase expression, string name)
+    public override Result<SyntaxException, object> VisitBinary(BinaryExpression expression)
+    {
+        if (expression.Kind is SyntaxKind.AssignmentExpression)
+        {
+            if (expression.Left is ConstantExpression constant)
+            {
+                var variable = GetVariable(expression, constant.Lexeme);
+
+                if (variable is null || !variable.IsDeclared)
+                    return new UndeclaredVariableException(constant.Lexeme, expression.Range);
+
+                var result = Visit(expression.Right);
+                if (result.IsError)
+                    return result.Error;
+                
+                variable.SetValue(result.Value);
+
+                return variable.Value;
+            }
+
+            return new InterpreterException("Cannot assign value to expression", expression.Range);
+        }
+
+        var left = Visit(expression.Left);
+
+        if (left.IsError)
+            return left.Error;
+
+        var right = Visit(expression.Right);
+
+        if (right.IsError)
+            return right.Error;
+
+        switch (expression.Kind)
+        {
+            case SyntaxKind.DivideExpression:
+                return (double) left.Value / (double) right.Value;
+            case SyntaxKind.MultiplyExpression:
+                return (double) left.Value * (double) right.Value;
+            case SyntaxKind.SubtractExpression:
+                return (double) left.Value - (double) right.Value;
+            case SyntaxKind.AddExpression:
+            {
+                if (left.Value is double ld && right.Value is double rd)
+                    return ld + rd;
+
+                return left.Value + right.Value.ToString();
+            }
+            case SyntaxKind.RelationalExpression:
+                return expression.Operator.Lexeme switch
+                {
+                    ">" => (double) left.Value > (double) right.Value,
+                    "<" => (double) left.Value < (double) right.Value,
+                    ">=" => (double) left.Value >= (double) right.Value,
+                    "<=" => (double) left.Value <= (double) right.Value,
+                    _ => new UnexpectedOperatorException(expression.Operator.Lexeme, expression.Operator.Range)
+                };
+            case SyntaxKind.AndExpression:
+                return (bool) left.Value && (bool) right.Value;
+            case SyntaxKind.OrExpression:
+                return (bool) left.Value || (bool) right.Value;
+            case SyntaxKind.EqualityExpression:
+                return left.Value.Equals(right.Value);
+        }
+
+        return new InterpreterException("Unknown operation", expression.Range);
+    }
+
+    public override Result<SyntaxException, object> VisitFor(ForExpression expression)
+    {
+        if (expression.Initialization is not null)
+        {
+            var initialization = Visit(expression.Initialization);
+
+            if (initialization.IsError)
+                return initialization.Error;
+        }
+
+        object value = Empty.Instance;
+
+        while (true)
+        {
+            var condition = Condition();
+
+            if (condition.IsError)
+                return condition.Error;
+
+            if (!condition.Value)
+                break;
+
+            var result = Visit(expression.Body);
+
+            if (result.IsError)
+                return result.Error;
+
+            value = result.Value;
+
+            if (expression.Step is null)
+                continue;
+
+            result = Visit(expression.Step);
+
+            if (result.IsError)
+                return result.Error;
+        }
+
+        return value;
+
+        Result<SyntaxException, bool> Condition()
+        {
+            if (expression.Condition is null)
+                return true;
+
+            var result = Visit(expression.Condition);
+
+            if (result.IsError)
+                return result.Error;
+
+            return (bool) result.Value;
+        }
+    }
+
+    public override Result<SyntaxException, object> VisitIf(IfExpression expression)
+    {
+        var condition = Visit(expression.Condition);
+
+        if (condition.IsError)
+            return condition.Error;
+
+        if ((bool) condition)
+            return Visit(expression.ThenBranch);
+
+        return expression.ElseBranch is null
+            ? Empty.Instance
+            : Visit(expression.ElseBranch);
+    }
+
+    public override Result<SyntaxException, object> VisitInvocation(InvocationExpression expression)
+    {
+        if (expression.Function is not ConstantExpression constant)
+            return new InterpreterException("Expected function name", expression.Function.Range);
+
+        var function = GetFunction(expression, constant.Lexeme);
+
+        if (function is null)
+            return new UndeclaredFunctionException(constant.Lexeme, constant.Range);
+
+        var args = expression.Arguments.Select(Visit).ToArray();
+
+        if (args.Any(a => a.IsError))
+            return args.FirstOrDefault(a => a.IsError).Error!;
+
+        switch (function)
+        {
+            case Function action:
+                action.Invoke(args.Select(a => a.Value)!);
+                return Empty.Instance;
+            case Function<string> sFunction:
+                return sFunction.Invoke(args.Select(a => a.Value)!);
+            case Function<bool> bFunction:
+                return bFunction.Invoke(args.Select(a => a.Value)!);
+            case Function<double> dFunction:
+                return dFunction.Invoke(args.Select(a => a.Value)!);
+            default:
+                return new InterpreterException($"Unknown return type of function {function.Name}", expression.Range);
+        }
+    }
+
+    public override Result<SyntaxException, object> VisitParenthesized(ParenthesizedExpression expression)
+    {
+        return Visit(expression.Expression);
+    }
+
+    public override Result<SyntaxException, object> VisitRepeat(RepeatExpression expression)
+    {
+        Result<SyntaxException, object> value;
+
+        while (true)
+        {
+            value = Visit(expression.Body);
+            if (value.IsError)
+                return value.Error;
+
+            var condition = Visit(expression.Condition);
+            if (condition.IsError)
+                return condition.Error;
+
+            if ((bool) condition)
+                break;
+        }
+
+        return value;
+    }
+
+    public override Result<SyntaxException, object> VisitScope(ScopeExpression expression)
+    {
+        object value = Empty.Instance;
+
+        foreach (var innerExpression in expression.InnerExpressions)
+        {
+            var result = Visit(innerExpression);
+            if (result.IsError)
+                return result.Error;
+
+            value = result.Value;
+        }
+
+        return value;
+    }
+
+    public override Result<SyntaxException, object> VisitVariable(VariableExpression expression)
+    {
+        var name = expression.NameToken.Lexeme;
+
+        var variable = GetVariable(expression, name);
+
+        if (variable is null)
+            return new UndeclaredVariableException(name, expression.Range);
+
+        variable.IsDeclared = true;
+
+        if (expression.AssignmentExpression is not null)
+        {
+            var result = Visit(expression.AssignmentExpression);
+            if (result.IsError)
+                return result.Error;
+
+            variable.SetValue(result.Value);
+        }
+
+        return variable.Value ?? Empty.Instance;
+    }
+
+    public override Result<SyntaxException, object> VisitWhile(WhileExpression expression)
+    {
+        Result<SyntaxException, object> value = Empty.Instance;
+
+        while (true)
+        {
+            var condition = Visit(expression.Condition);
+
+            if (condition.IsError)
+                return condition.Error;
+
+            if (!(bool) condition)
+                break;
+
+            value = Visit(expression.Body);
+
+            if (value.IsError)
+                return value.Error;
+        }
+
+        return value;
+    }
+
+    private Variable? GetVariable(ExpressionBase expression, string name)
     {
         var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
 
@@ -112,13 +312,10 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object, object>
 
         var variable = node?.GetVariableIncludingAncestors(name);
 
-        if (variable is null)
-            throw new Exception($"undeclarated variable {name}");
-
         return variable;
     }
 
-    private FunctionBase GetFunction(ExpressionBase expression, string name)
+    private FunctionBase? GetFunction(ExpressionBase expression, string name)
     {
         var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
 
@@ -126,119 +323,6 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object, object>
 
         var function = node?.GetFunctionIncludingAncestors(name);
 
-        if (function is null)
-            throw new Exception($"undeclarated function {name}");
-
         return function;
-    }
-
-
-    public override object VisitFor(ForExpression expression, object state)
-    {
-        if (expression.Initialization is not null)
-            Visit(expression.Initialization, state);
-
-        object value = Empty.Instance;
-
-        while (Condition())
-        {
-            value = Visit(expression.Body, state);
-
-            if (expression.Step is not null)
-                Visit(expression.Step, state);
-        }
-
-        return value;
-
-        bool Condition()
-        {
-            return expression.Condition is null || (bool)Visit(expression.Condition, state);
-        }
-    }
-
-    public override object VisitIf(IfExpression expression, object state)
-    {
-        if ((bool)Visit(expression.Condition, state))
-            return Visit(expression.ThenBranch, state);
-
-        return expression.ElseBranch is null
-            ? Empty.Instance
-            : Visit(expression.ElseBranch, state);
-    }
-
-    public override object VisitInvocation(InvocationExpression expression, object state)
-    {
-        if (expression.Function is not ConstantExpression constant)
-            throw new Exception("Invalid function");
-
-        var function = GetFunction(expression, constant.Lexeme);
-
-        var args = expression.Arguments.Select(argument => Visit(argument, state)).ToArray();
-
-        switch (function)
-        {
-            case Function action:
-                action.Invoke(args);
-                return Empty.Instance;
-            case Function<string> sFunction:
-                return sFunction.Invoke(args);
-            case Function<bool> bFunction:
-                return bFunction.Invoke(args);
-            case Function<double> dFunction:
-                return dFunction.Invoke(args);
-            default:
-                throw new Exception($"Unknown return type for function {function.Name}");
-        }
-    }
-
-    public override object VisitParenthesized(ParenthesizedExpression expression, object state)
-    {
-        return Visit(expression.Expression, state);
-    }
-
-    public override object VisitRepeat(RepeatExpression expression, object state)
-    {
-        object value;
-
-        do
-        {
-            value = Visit(expression.Body, state);
-        } while (!(bool)Visit(expression.Condition, state));
-
-        return value;
-    }
-
-    public override object VisitScope(ScopeExpression expression, object state)
-    {
-        object value = Empty.Instance;
-
-        foreach (var innerExpression in expression.InnerExpressions)
-            value = Visit(innerExpression, state);
-
-        return value;
-    }
-
-    public override object VisitVariable(VariableExpression expression, object state)
-    {
-        var name = expression.NameToken.Lexeme;
-
-        var variable = GetVariable(expression, name);
-
-        variable.IsDeclared = true;
-
-        if (expression.AssignmentExpression is not null)
-            variable.SetValue(Visit(expression.AssignmentExpression, state));
-
-        return variable.Value ?? Empty.Instance;
-    }
-
-    public override object VisitWhile(WhileExpression expression, object state)
-    {
-        object value = Empty.Instance;
-
-        while ((bool)Visit(expression.Condition, state))
-            value = Visit(expression.Body, state);
-
-        return value;
     }
 }

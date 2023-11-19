@@ -49,16 +49,16 @@ public sealed class DeclarationsCollector : ExpressionWalker
     {
         var name = expression.NameToken.Lexeme;
 
-        Variable variable = expression.TypeToken.Kind switch
+        var variable = expression.TypeToken.Kind switch
         {
             SyntaxKind.Number => new Variable(name, typeof(double)),
             SyntaxKind.String => new Variable(name, typeof(string)),
             SyntaxKind.Bool => new Variable(name, typeof(bool)),
-            _ => throw new InvalidEnumArgumentException()
+            _ => throw new UnexpectedTokenException(expression.TypeToken)
         };
 
         if (!(_currentNode?.AddVariable(variable) ?? true))
-            throw new InvalidOperationException($"Variable {name} is already declared in this scope");
+            throw new VariableAlreadyDeclaredException(name, expression.Range);
 
         base.VisitVariable(expression);
     }

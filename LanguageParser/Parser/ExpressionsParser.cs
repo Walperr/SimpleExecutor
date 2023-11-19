@@ -9,7 +9,7 @@ namespace LanguageParser.Parser;
 
 public sealed class ExpressionsParser
 {
-    private readonly List<ParseException> _errors = new();
+    private readonly List<SyntaxException> _errors = new();
     private readonly IStream<Token> _tokens;
 
     private ExpressionsParser(IStream<Token> tokens)
@@ -17,18 +17,14 @@ public sealed class ExpressionsParser
         _tokens = tokens;
     }
 
-    public static Result<ParseException, ExpressionBase> Parse(string text)
+    public static Result<SyntaxException, ExpressionBase> Parse(string text)
     {
-        TokenStream tokens;
-        
-        try
-        {
-            tokens = PreParser.PreParse((TokenStream)Tokenizer.Tokenizer.Tokenize(text));
-        }
-        catch (ParseException e)
-        {
-            return e;
-        }
+        var result = PreParser.PreParse((TokenStream) Tokenizer.Tokenizer.Tokenize(text));
+
+        if (result.IsError)
+            return result.Error;
+
+        var tokens = result.Value;
 
         var parser = new ExpressionsParser(tokens);
 
@@ -48,7 +44,7 @@ public sealed class ExpressionsParser
 
         if (tokens.Current.Kind != SyntaxKind.EOF)
         {
-            return new ParseException("Expression is not consumed entirely", tokens.Current.Range);
+            return new SyntaxException("Expression is not consumed entirely", tokens.Current.Range);
         }
 
         return expression;
@@ -117,15 +113,6 @@ public sealed class ExpressionsParser
         }
 
         return true;
-    }
-
-    private ExpressionBase? ParseOuterExpression()
-    {
-        var expression = ParseExpression();
-        
-        var token = EatToken(SyntaxKind.Semicolon);
-
-        return token is not null ? expression : null;
     }
 
     private ExpressionBase? ParseExpression()
@@ -267,7 +254,7 @@ public sealed class ExpressionsParser
         if (value is BinaryExpression { Kind: SyntaxKind.AssignmentExpression } assignment)
             return new VariableExpression(typeToken, nameToken, assignment);
         
-        _errors.Add(new ParseException("Expected assignment", _tokens.Current.Range));
+        _errors.Add(new SyntaxException("Expected assignment", _tokens.Current.Range));
         return null;
     }
 

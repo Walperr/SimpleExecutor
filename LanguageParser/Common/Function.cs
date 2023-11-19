@@ -10,7 +10,7 @@ public abstract class FunctionBase
     }
     
     public string Name { get; }
-    public abstract Type Type { get; }
+    public abstract Type ReturnType { get; }
 
     public Type[] ArgumentTypes { get; protected set; }
 }
@@ -26,7 +26,7 @@ public sealed class Function<T> : FunctionBase
         Arguments = arguments;
     }
 
-    public override Type Type => typeof(T);
+    public override Type ReturnType => typeof(T);
 
     public T Invoke(IEnumerable<object> arguments)
     {
@@ -43,7 +43,7 @@ public sealed class Function : FunctionBase
         _body = body;
     }
 
-    public override Type Type => typeof(Empty);
+    public override Type ReturnType => typeof(Empty);
 
     public void Invoke(IEnumerable<object> arguments)
     {
