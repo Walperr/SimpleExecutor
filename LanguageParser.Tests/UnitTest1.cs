@@ -701,4 +701,54 @@ public class UnitTest1
         
         _testOutputHelper.WriteLine(result.Value.ToString());
     }
+    
+    [Fact]
+    public void CanCalculateSubtraction()
+    {
+        const string text = "1 - 2 - 3 - 4";
+
+        const double expected = 1.0 - 2.0 - 3.0 - 4.0;
+        
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .Build();
+        
+        Assert.NotNull(interpreter);
+        
+        interpreter.Initialize(text);
+        
+        Assert.False(interpreter.HasErrors);
+
+        var result = interpreter.Interpret();
+        
+        Assert.NotNull(result.Value);
+        Assert.Null(result.Error);
+        
+        Assert.Equivalent( expected, result.Value);
+        
+        _testOutputHelper.WriteLine(result.Value.ToString());
+    }
+
+    [Fact]
+    public void CanCalculatePI()
+    {
+        const string text =
+            "number r = 0\nnumber c = 16\nnumber n = 104\n\nfor (number i = 0; i <= n; i = i + 1)\n{\n\tc = c / 16\n\tr = r + c * (4 / (8 * i + 1) - 2 / (8 * i + 4) - 1 / (8 * i + 5) - 1 / (8 * i + 6))\n}";
+
+        var interpreter = InterpreterBuilder.CreateBuilder().Build();
+        
+        Assert.NotNull(interpreter);
+        
+        interpreter.Initialize(text);
+        
+        Assert.False(interpreter.HasErrors);
+
+        var result = interpreter.Interpret();
+        
+        Assert.NotNull(result.Value);
+        Assert.Null(result.Error);
+
+        Assert.Equivalent(Math.PI, result.Value);
+        
+        _testOutputHelper.WriteLine(result.Value.ToString());
+    }
 }

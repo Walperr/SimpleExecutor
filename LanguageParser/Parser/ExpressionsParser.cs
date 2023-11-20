@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
@@ -137,40 +138,55 @@ public sealed class ExpressionsParser
 
         while (true)
         {
-            var tokenKind = _tokens.Current.Kind;
-            SyntaxKind operatorKind;
+            var tk = _tokens.Current.Kind;
 
-            if (Syntax.IsBinaryExpression(tokenKind))
-                operatorKind = Syntax.ConvertToBinaryExpression(tokenKind);
+            SyntaxKind opKind;
+
+            if (Syntax.IsBinaryExpression(tk))
+            {
+                opKind = Syntax.ConvertToBinaryExpression(tk);
+            }
             else
+            {
                 break;
+            }
 
-            var newPrecedence = GetPrecedence(operatorKind);
-            if (newPrecedence < precedence) // operator with less precedence than current (1 * 2 + 3)
-                break; //                                                      and stopped there ^
+            var newPrecedence = GetPrecedence(opKind);
 
-            var operatorToken = EatToken(tokenKind);
-            if (operatorToken is null)
+            // Check the precedence to see if we should "take" this operator
+            if (newPrecedence < precedence)
+            {
+                break;
+            }
+
+            // Same precedence, but not right-associative -- deal with this "later"
+            if (newPrecedence == precedence)
+            {
+                break;
+            }
+
+            // We'll "take" this operator, as precedence is tentatively OK.
+            var opToken = EatToken(tk);
+
+            if (opToken is null)
                 return null;
 
             var leftPrecedence = GetPrecedence(leftOperand.Kind);
             if (newPrecedence > leftPrecedence)
+            {
                 throw new InvalidOperationException();
+            }
 
-            var subExpression = ParseSubExpression(newPrecedence);
-            if (subExpression is null)
+            Debug.Assert(Syntax.IsBinaryExpression(tk));
+            
+            var constantExpression = new ConstantExpression(SyntaxKind.Operator, opToken);
+            
+            var rightOperand = ParseSubExpression(newPrecedence);
+            
+            if (rightOperand is null)
                 return null;
-
-            var operatorExpression = new ConstantExpression(SyntaxKind.Operator, operatorToken);
-            if (subExpression is BinaryExpression bin && GetPrecedence(bin.Kind) == newPrecedence)
-            {
-                leftOperand = new BinaryExpression(operatorKind, leftOperand, operatorExpression, bin.Left);
-                leftOperand = new BinaryExpression(bin.Kind, leftOperand, bin.Operator, bin.Right);
-            }
-            else
-            {
-                leftOperand = new BinaryExpression(operatorKind, leftOperand, operatorExpression, subExpression);
-            }
+            
+            leftOperand = new BinaryExpression(opKind, leftOperand, constantExpression, rightOperand);
         }
 
         return leftOperand;
