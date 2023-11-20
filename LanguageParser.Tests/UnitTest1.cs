@@ -675,4 +675,30 @@ public class UnitTest1
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
     }
+    
+    [Fact]
+    public void CanCalculateDivision()
+    {
+        const string text = "1 / 2 / 3 / 4";
+
+        const double expected = 1.0 / 2.0 / 3.0 / 4.0;
+        
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .Build();
+        
+        Assert.NotNull(interpreter);
+        
+        interpreter.Initialize(text);
+        
+        Assert.False(interpreter.HasErrors);
+
+        var result = interpreter.Interpret();
+        
+        Assert.NotNull(result.Value);
+        Assert.Null(result.Error);
+        
+        Assert.Equivalent( expected, result.Value);
+        
+        _testOutputHelper.WriteLine(result.Value.ToString());
+    }
 }

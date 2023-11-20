@@ -139,7 +139,7 @@ public class MainViewModel : ViewModelBase
 // for(number i = 1; i < 1000; i = i + 1)
 // {
 //     rotate(15)
-//     move(i)
+//     move(i * 0.2)
 //
 //     if (j == 2)
 //         setColor("red")

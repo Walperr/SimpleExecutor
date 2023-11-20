@@ -148,6 +148,8 @@ internal sealed class Tokenizer
 
     private Token StringToken()
     {
+        var openQuote = _charStream.Current;
+        
         _charStream.Advance();
 
         var start = _charStream.Index;
@@ -179,7 +181,7 @@ internal sealed class Tokenizer
                     }
                     _charStream.Advance();
                     break;
-                case '"' or '\'':
+                case var c when c == openQuote:
                     _charStream.Advance();
                     return new Token(SyntaxKind.StringLiteral, builder.ToString(), start);
                 case '\0':

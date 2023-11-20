@@ -3,10 +3,10 @@ namespace LanguageParser.Common;
 //todo: refactor this
 public abstract class FunctionBase
 {
-    public FunctionBase(string name, IEnumerable<Type> args)
+    public FunctionBase(string name, IEnumerable<Type> parameters)
     {
         Name = name;
-        ArgumentTypes = args.ToArray();
+        ArgumentTypes = parameters.ToArray();
     }
     
     public string Name { get; }
