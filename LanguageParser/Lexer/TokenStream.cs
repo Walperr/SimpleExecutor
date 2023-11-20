@@ -1,7 +1,7 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 
-namespace LanguageParser.Tokenizer;
+namespace LanguageParser.Lexer;
 
 internal sealed class TokenStream : IStream<Token>
 {

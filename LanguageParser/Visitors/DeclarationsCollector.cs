@@ -1,9 +1,7 @@
-using System.ComponentModel;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
-using LanguageParser.Visitors;
 
-namespace LanguageParser;
+namespace LanguageParser.Visitors;
 
 public sealed class DeclarationsCollector : ExpressionWalker
 {

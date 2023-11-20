@@ -1,9 +1,10 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Text;
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
 
-namespace LanguageParser.Tokenizer;
+namespace LanguageParser.Lexer;
 
 internal sealed class Tokenizer
 {
@@ -212,7 +213,12 @@ internal sealed class Tokenizer
             switch (_charStream.Current)
             {
                 case '\r' or '\n' or ';':
-                    builder.Add(NewLine());
+                    builder.Add(ReadNewLine());
+                    break;
+                case '/':
+                    var comment = ReadComment();
+                    if (comment is not null)
+                        builder.Add(comment);
                     break;
                 default:
                     if (char.IsWhiteSpace(_charStream.Current))
@@ -228,6 +234,32 @@ internal sealed class Tokenizer
         return builder.ToImmutable();
     }
 
+    private Token? ReadComment()
+    {
+        Debug.Assert(_charStream.Current == '/');
+
+        if (_charStream.Next != '/')
+            return null;
+
+        var start = _charStream.Index;
+        
+        var builder = new StringBuilder();
+
+        builder.Append(_charStream.Current);
+        builder.Append(_charStream.Next);
+        
+        _charStream.Advance();
+        _charStream.Advance();
+
+        while (_charStream.CanAdvance && !IsNewLine(_charStream.Current))
+        {
+            builder.Append(_charStream.Current);
+            _charStream.Advance();
+        }
+
+        return new Token(SyntaxKind.Comment, builder.ToString(), start);
+    } 
+    
     private Token ReadToken(Func<char, bool> predicate, Func<string, SyntaxKind> kindResolver)
     {
         var start = _charStream.Index;
@@ -241,7 +273,7 @@ internal sealed class Tokenizer
         return new Token(kind, lexeme, start);
     }
     
-    private Token NewLine()
+    private Token ReadNewLine()
     {
         if (_charStream.Current == '\r')
         {
@@ -260,7 +292,7 @@ internal sealed class Tokenizer
 
     private bool IsTrivia(char c)
     {
-        return IsNewLine(c) || char.IsWhiteSpace(c);
+        return IsNewLine(c) || char.IsWhiteSpace(c) || _charStream.Current == '/';
     }
 
     private bool IsNewLine(char c)

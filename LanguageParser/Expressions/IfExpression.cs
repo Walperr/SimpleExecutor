@@ -1,6 +1,6 @@
 using LanguageParser.Common;
 using LanguageParser.Interfaces;
-using LanguageParser.Tokenizer;
+using LanguageParser.Lexer;
 using LanguageParser.Visitors;
 
 namespace LanguageParser.Expressions;

@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
 using LanguageParser.Interfaces;
-using LanguageParser.Tokenizer;
+using LanguageParser.Lexer;
 
 namespace LanguageParser.Parser;
 
@@ -20,7 +20,7 @@ public sealed class ExpressionsParser
 
     public static Result<SyntaxException, ExpressionBase> Parse(string text)
     {
-        var result = PreParser.PreParse((TokenStream) Tokenizer.Tokenizer.Tokenize(text));
+        var result = PreParser.PreParse((TokenStream) Tokenizer.Tokenize(text));
 
         if (result.IsError)
             return result.Error;

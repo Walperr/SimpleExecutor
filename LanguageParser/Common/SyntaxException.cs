@@ -1,4 +1,4 @@
-using LanguageParser.Tokenizer;
+using LanguageParser.Lexer;
 
 namespace LanguageParser.Common;
 

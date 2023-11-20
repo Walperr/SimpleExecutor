@@ -220,6 +220,8 @@ public enum SyntaxKind
     /// </summary>
     ScopeExpression,
     
+    Comment,
+    
     NewLine,
     
     Error

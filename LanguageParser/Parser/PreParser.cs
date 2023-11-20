@@ -1,5 +1,5 @@
 using LanguageParser.Common;
-using LanguageParser.Tokenizer;
+using LanguageParser.Lexer;
 
 namespace LanguageParser.Parser;
 

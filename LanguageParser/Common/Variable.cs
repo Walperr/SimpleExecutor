@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace LanguageParser;
+namespace LanguageParser.Common;
 
 public class Variable
 {

@@ -1,7 +1,9 @@
 using LanguageInterpreter;
 using LanguageInterpreter.Execution;
 using LanguageParser.Common;
+using LanguageParser.Lexer;
 using LanguageParser.Parser;
+using LanguageParser.Visitors;
 using Xunit.Abstractions;
 
 namespace LanguageParser.Tests;
@@ -23,7 +25,7 @@ public class UnitTest1
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
-        var stream = Tokenizer.Tokenizer.Tokenize(text);
+        var stream = Tokenizer.Tokenize(text);
 
         Assert.NotNull(stream);
         Assert.True(stream.CanAdvance);
@@ -44,7 +46,7 @@ public class UnitTest1
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
-        var stream = Tokenizer.Tokenizer.Tokenize(text);
+        var stream = Tokenizer.Tokenize(text);
 
         Assert.NotNull(stream);
         Assert.True(stream.CanAdvance);
@@ -65,7 +67,7 @@ public class UnitTest1
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
-        var stream = Tokenizer.Tokenizer.Tokenize(text);
+        var stream = Tokenizer.Tokenize(text);
 
         Assert.NotNull(stream);
         Assert.True(stream.CanAdvance);

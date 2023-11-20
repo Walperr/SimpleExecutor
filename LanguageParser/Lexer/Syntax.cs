@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using LanguageParser.Common;
 
-namespace LanguageParser.Tokenizer;
+namespace LanguageParser.Lexer;
 
 internal static class Syntax
 {

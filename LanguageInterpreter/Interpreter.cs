@@ -3,6 +3,7 @@ using LanguageInterpreter.Execution;
 using LanguageParser;
 using LanguageParser.Common;
 using LanguageParser.Parser;
+using LanguageParser.Visitors;
 
 namespace LanguageInterpreter;
 

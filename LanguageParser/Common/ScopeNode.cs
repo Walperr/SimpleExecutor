@@ -1,7 +1,6 @@
-using LanguageParser.Common;
 using LanguageParser.Expressions;
 
-namespace LanguageParser;
+namespace LanguageParser.Common;
 
 public sealed class ScopeNode
 {
