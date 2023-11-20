@@ -1,5 +1,4 @@
 using LanguageParser.Common;
-using LanguageParser.Expressions;
 using LanguageParser.Tokenizer;
 
 namespace LanguageParser.Parser;
@@ -7,6 +6,8 @@ namespace LanguageParser.Parser;
 internal sealed class PreParser
 {
     private readonly TokenStream _tokenStream;
+    private SyntaxException? _error;
+    private int? _targetPlacement;
 
     public PreParser(TokenStream tokenStream)
     {
@@ -21,17 +22,50 @@ internal sealed class PreParser
             _tokenStream.Tokens[^1].Kind is SyntaxKind.CloseBrace)
             return _tokenStream;
 
-        if (_tokenStream.Tokens[0].Kind is not SyntaxKind.OpenBrace)
-            return new TokenStream(GetTokensWithBraces());
+        if (_tokenStream.Tokens[0].Kind is SyntaxKind.OpenBrace)
+            return new ExpectedOtherTokenException(_tokenStream.EOF, SyntaxKind.CloseBrace);
+        
+        var stream = new TokenStream(GetTokensWithBraces());
 
-        return new ExpectedOtherTokenException(_tokenStream.EOF, SyntaxKind.CloseBrace);
+        if (_error is not null)
+            return _error;
+            
+        return stream;
     }
 
     private IEnumerable<Token> GetTokensWithBraces()
     {
+        var stream = new TokenStream(_tokenStream.Tokens);
+        ExpressionsParser? parser = null;
+        
         yield return new Token(SyntaxKind.OpenBrace, "", 0);
-        foreach (var token in _tokenStream.Tokens)
-            yield return token;
+        while (stream.Index < stream.Length)
+        {
+            if (stream.Current.Kind is SyntaxKind.For)
+            {
+                parser ??= new ExpressionsParser(stream);
+                
+                yield return new Token(SyntaxKind.OpenBrace, "", stream.Current.Range.Start);
+
+                var index = stream.Index;
+                
+                _targetPlacement = parser.ParseExpression()?.Range.End;
+
+                while (stream.Index > index) 
+                    stream.Recede();
+
+                if (_targetPlacement is null)
+                    _error = parser.Error;
+            }
+
+            yield return stream.Current;
+            
+            if (_targetPlacement == stream.Current.Range.End)
+                yield return new Token(SyntaxKind.CloseBrace, "", _targetPlacement.Value);
+            
+            stream.Advance();
+        }
+        
         yield return new Token(SyntaxKind.CloseBrace, "", _tokenStream.EOF.Range.Start);
     }
 }

@@ -13,7 +13,7 @@ public sealed class ExpressionsParser
     private readonly List<SyntaxException> _errors = new();
     private readonly IStream<Token> _tokens;
 
-    private ExpressionsParser(IStream<Token> tokens)
+    internal ExpressionsParser(IStream<Token> tokens)
     {
         _tokens = tokens;
     }
@@ -116,7 +116,9 @@ public sealed class ExpressionsParser
         return true;
     }
 
-    private ExpressionBase? ParseExpression()
+    internal SyntaxException Error => _errors.First();
+
+    internal ExpressionBase? ParseExpression()
     {
         var expression = ParseSubExpression(Precedence.Expression);
         if (_tokens.Current.Kind is SyntaxKind.Semicolon)

@@ -439,7 +439,7 @@ public class UnitTest1
     public void CanEvaluateExpression()
     {
         var text =
-            "number a;\nnumber b = 0;\nnumber c = b;\n\nstring s = 'spgjwgjwe';\n\nbool isSomething;\n\nbool isSomethingElse = true;\n\n{\n    number f = 0.023;\n\n    string s1 = \"jwgeogjw\";\n\n    string s2;\n\n    if (false)\n        b = 4;\n    else\n        a = 34.3453 + b;\n\n    if (true)\n        b = 4;\n    else if (5 < 54)\n        a = 34.3453 + b;\n\n    for (number i = 0; i <= 23; i = i + 1)\n    {\n        number j = 0;\n        s2 = \"2ada\";\n        j = j + 1;\n    }\n\n    for (i = 0; false; i = i + 1)\n    {\n        number j = 0;\n        s2 = \"2ada\" + s2;\n        j = j + 1;\n    }\n\n    number j = 0;\n\n    while (isSomethingElse)\n    {\n        s = \"2ada\" + s2;\n        j = j + 1;\n        bool t = false;\n\n        if (t == false)\n            {\n                t = true;\n            }\n\n        if (j == 10)\n            isSomethingElse = false;\n    }\n}\n\n{\n    number f = 3123.0232;\n    number g;\n    string str = \"rref\";\n    bool bebra = false;\n}";
+            "number a;\nnumber b = 0;\nnumber c = b;\n\nstring s = 'spgjwgjwe';\n\nbool isSomething;\n\nbool isSomethingElse = true;\n\n{\n    number f = 0.023;\n\n    string s1 = \"jwgeogjw\";\n\n    string s2;\n\n    if (false)\n        b = 4;\n    else\n        a = 34.3453 + b;\n\n    if (true)\n        b = 4;\n    else if (5 < 54)\n        a = 34.3453 + b;\n\n    for (number i = 0; i <= 23; i = i + 1)\n    {\n        number j = 0;\n        s2 = \"2ada\";\n        j = j + 1;\n    }\n\n    for (number i = 0; false; i = i + 1)\n    {\n        number j = 0;\n        s2 = \"2ada\" + s2;\n        j = j + 1;\n    }\n\n    number j = 0;\n\n    while (isSomethingElse)\n    {\n        s = \"2ada\" + s2;\n        j = j + 1;\n        bool t = false;\n\n        if (t == false)\n            {\n                t = true;\n            }\n\n        if (j == 10)\n            isSomethingElse = false;\n    }\n}\n\n{\n    number f = 3123.0232;\n    number g;\n    string str = \"rref\";\n    bool bebra = false;\n}";
 
         _testOutputHelper.WriteLine(text);
 
@@ -658,7 +658,7 @@ public class UnitTest1
         Assert.NotNull(interpreter);
 
         const string text =
-            "print(\"start\")\n\nnumber someNumber = 6\n\nfor (number i = 0; i < someNumber; i = i + 1)\n    print(\"current i = \" + i)\n\nwhile (i > someNumber / 2)\n{\n    print(i + \": PI still equals \" + PI)\n\n    i = i - 1\n}\n\nnumber j = 0\n\nrepeat\n{\n    print(\"Repeat print E\")\n    print(E)\n\n    j = j + 1\n} until (j >= 5)\n\nprint(\"done\")";
+            "print(\"start\")\n\nnumber someNumber = 6\n\nfor (number i = 0; i < someNumber; i = i + 1)\n    print(\"current i = \" + i)\n\nnumber i = 0\n\nwhile (i > someNumber / 2)\n{\n    print(i + \": PI still equals \" + PI)\n\n    i = i - 1\n}\n\nnumber j = 0\n\nrepeat\n{\n    print(\"Repeat print E\")\n    print(E)\n\n    j = j + 1\n} until (j >= 5)\n\nprint(\"done\")";
 
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("\nresult:\n");
