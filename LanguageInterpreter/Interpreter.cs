@@ -41,7 +41,7 @@ internal sealed class Interpreter : IInterpreter
             Error = type.Error;
     }
 
-    public Result<SyntaxException, object> Interpret()
+    public Result<SyntaxException, object> Interpret(CancellationToken? token)
     {
         if (_root is null)
             throw new InvalidOperationException("Interpreter is uninitialized");
@@ -49,7 +49,7 @@ internal sealed class Interpreter : IInterpreter
         if (((IInterpreter)this).HasErrors)
             throw new InvalidOperationException("Cannot interpret invalid expression");
 
-        var result = ExpressionEvaluator.Evaluate(_root);
+        var result = ExpressionEvaluator.Evaluate(_root, token);
 
         return result.IsError ? result.Error : result.Value;
     }

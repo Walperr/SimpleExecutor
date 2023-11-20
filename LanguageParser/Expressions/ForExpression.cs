@@ -47,8 +47,8 @@ public sealed class ForExpression : ExpressionBase
         visitor.VisitFor(this);
     }
 
-    public override T Visit<T>(ExpressionVisitor<T> visitor)
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
     {
-        return visitor.VisitFor(this);
+        return visitor.VisitFor(this, state);
     }
 }

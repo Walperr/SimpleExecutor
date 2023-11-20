@@ -32,8 +32,8 @@ public sealed class VariableExpression : ExpressionBase
         visitor.VisitVariable(this);
     }
 
-    public override T Visit<T>(ExpressionVisitor<T> visitor)
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
     {
-        return visitor.VisitVariable(this);
+        return visitor.VisitVariable(this, state);
     }
 }

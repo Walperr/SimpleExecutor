@@ -6,7 +6,7 @@ namespace LanguageInterpreter;
 public interface IInterpreter
 {
     void Initialize(string source);
-    Result<SyntaxException, object> Interpret();
+    Result<SyntaxException, object> Interpret(CancellationToken? token);
     
     SyntaxException? Error { get; }
     

@@ -32,8 +32,8 @@ public sealed class ConstantExpression : ExpressionBase, ISyntaxElement
         visitor.VisitConstant(this);
     }
 
-    public override T Visit<T>(ExpressionVisitor<T> visitor)
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
     {
-        return visitor.VisitConstant(this);
+        return visitor.VisitConstant(this, state);
     }
 }

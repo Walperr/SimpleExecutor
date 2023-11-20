@@ -19,15 +19,15 @@ public class UnitTest1
     public void CanTokenizeSimpleString()
     {
         const string text = "print(\"Hello, world!\")";
-        
+
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
         var stream = Tokenizer.Tokenizer.Tokenize(text);
-        
+
         Assert.NotNull(stream);
         Assert.True(stream.CanAdvance);
-        
+
         while (stream.CanAdvance)
         {
             _testOutputHelper.WriteLine(stream.Current.ToString());
@@ -38,13 +38,14 @@ public class UnitTest1
     [Fact]
     public void CanTokenizeString()
     {
-        const string text = "print(\"Hello, world!\"); print(34.53); 5 + 3; a = 2 - 3.43; b * c == t; a / b; -34.43; -a; n || c' t && d";
-        
+        const string text =
+            "print(\"Hello, world!\"); print(34.53); 5 + 3; a = 2 - 3.43; b * c == t; a / b; -34.43; -a; n || c' t && d";
+
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
         var stream = Tokenizer.Tokenizer.Tokenize(text);
-        
+
         Assert.NotNull(stream);
         Assert.True(stream.CanAdvance);
 
@@ -58,13 +59,14 @@ public class UnitTest1
     [Fact]
     public void CanTokenizeComplexString()
     {
-        const string text = "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string\";\n\nbool boolValue = false; \n    \nsomeFunction(arg1, arg2);\n\nif (boolValue)\n    arg1 = someFunction2(arg);\n\nif (false)\n    a = someFunction3(arg);\nelse\n    b = someFunction4(arg);\n\nif (predicat())\n    print(\"Hello, world\");\n\nwhile(true)\n{\n    Function1();\n    Function2();\n    Function3();\n    number c = (4 + 3) * 2.5 - 38 / 2;\n}\n\nfor (;;)\n{\n    ForBody();\n}\n\nrepeat Expression() until (true)\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody();\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1();\n    Expression2();\n\n    a + b + 4;\n}\n\nif (1)\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n        else\n            print(\"String\");\n\n\nif (1)\n{\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n}\nelse\n    print(\"String\");";
-        
+        const string text =
+            "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string\";\n\nbool boolValue = false; \n    \nsomeFunction(arg1, arg2);\n\nif (boolValue)\n    arg1 = someFunction2(arg);\n\nif (false)\n    a = someFunction3(arg);\nelse\n    b = someFunction4(arg);\n\nif (predicat())\n    print(\"Hello, world\");\n\nwhile(true)\n{\n    Function1();\n    Function2();\n    Function3();\n    number c = (4 + 3) * 2.5 - 38 / 2;\n}\n\nfor (;;)\n{\n    ForBody();\n}\n\nrepeat Expression() until (true)\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody();\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1();\n    Expression2();\n\n    a + b + 4;\n}\n\nif (1)\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n        else\n            print(\"String\");\n\n\nif (1)\n{\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n}\nelse\n    print(\"String\");";
+
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("tokens:");
 
         var stream = Tokenizer.Tokenizer.Tokenize(text);
-        
+
         Assert.NotNull(stream);
         Assert.True(stream.CanAdvance);
 
@@ -89,7 +91,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -103,7 +105,8 @@ public class UnitTest1
     {
         var texts = new[]
         {
-            "1 + 1", "a + b", "4 - 2.4", "2 * b", "2 == b", "a = b", "c == d", "1 == 2", "45 / 0.5", "true or false", "a and b", "1 + 1;", "a + b;",
+            "1 + 1", "a + b", "4 - 2.4", "2 * b", "2 == b", "a = b", "c == d", "1 == 2", "45 / 0.5", "true or false",
+            "a and b", "1 + 1;", "a + b;",
             "4 - 2.4;", "2 * b;", "2 == b;", "a = b;", "c == d;", "1 == 2;", "45 / 0.5;", "true or false;", "a and b;"
         };
 
@@ -112,7 +115,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -135,7 +138,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -143,7 +146,7 @@ public class UnitTest1
             Assert.Null(expression.Error);
         }
     }
-    
+
     [Fact]
     public void CanParseForExpressions()
     {
@@ -158,7 +161,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -182,7 +185,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -205,7 +208,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -228,7 +231,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -251,7 +254,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -259,7 +262,7 @@ public class UnitTest1
             Assert.Null(expression.Error);
         }
     }
-    
+
     [Fact]
     public void CanParseVariableDeclarationExpressions()
     {
@@ -275,7 +278,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -298,7 +301,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -306,7 +309,7 @@ public class UnitTest1
             Assert.Null(expression.Error);
         }
     }
-    
+
     [Fact]
     public void CanParseExpressionChain()
     {
@@ -321,7 +324,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
@@ -334,14 +337,14 @@ public class UnitTest1
     public void CanParseSequenceOfExpressions()
     {
         var text = "{Function(5 + 4.565 == 45 != 0); Func(34); 0-34; a == 3 * 2.522;}";
-        
+
         _testOutputHelper.WriteLine(text);
 
         var expression = ExpressionsParser.Parse(text);
-        
+
         if (expression.Error is not null)
             _testOutputHelper.WriteLine(expression.Error.Message);
-        
+
         Assert.NotNull(expression.Value);
         Assert.Null(expression.Error);
     }
@@ -351,37 +354,37 @@ public class UnitTest1
     {
         var text =
             "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string;\"\n\nbool boolValue = false \n    \nsomeFunction(arg1, arg2)\n\nif (boolValue)\n    arg1 = someFunction2(arg)\n\nif (false)\n    a = someFunction3(arg)\nelse\n    b = someFunction4(arg)\n\nif (predicat())\n    print(\"Hello, world\")\n\nwhile(true)\n{\n    Function1()\n    Function2()\n    Function3()\n    number c = (4 + 3) * 2.5 - 38 / 2\n}\n\nfor (;;)\n{\n    ForBody()\n}\n\nrepeat Expression() until (true)\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody()\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1()\n    Expression2()\n\n    a + b + 4\n}\n\nif (1)\n    if (2)\n        DoSomething()\n    else\n        if (3)\n            doOther()\n        else\n            print(\"String\")\n\n\nif (1)\n{\n    if (2)\n        DoSomething()\n    else\n        if (3)\n            doOther()\n}\nelse\n    print(\"String\")";
-        
+
         _testOutputHelper.WriteLine(text);
 
         var expression = ExpressionsParser.Parse(text);
-        
+
         if (expression.Error is not null)
         {
             _testOutputHelper.WriteLine(expression.Error.Message);
             _testOutputHelper.WriteLine(expression.Error.Range.ToString());
         }
-        
+
         Assert.NotNull(expression.Value);
         Assert.Null(expression.Error);
     }
-    
+
     [Fact]
     public void CanParseComplexStringWithSemicolons()
     {
         var text =
             "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string\";\n\nbool boolValue = false; \n    \nsomeFunction(arg1, arg2);\n\nif (boolValue)\n    arg1 = someFunction2(arg);\n\nif (false)\n    a = someFunction3(arg);\nelse\n    b = someFunction4(arg);\n\nif (predicat())\n    print(\"Hello, world\");\n\nwhile(true)\n{\n    Function1();\n    Function2();\n    Function3();\n    number c = (4 + 3) * 2.5 - 38 / 2;\n}\n\nfor (;;)\n{\n    ForBody();\n}\n\nrepeat Expression() until (true)\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody();\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1();\n    Expression2();\n\n    a + b + 4;\n}\n\nif (1)\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n        else\n            print(\"String\");\n\n\nif (1)\n{\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n}\nelse\n    print(\"String\");";
-        
+
         _testOutputHelper.WriteLine(text);
 
         var expression = ExpressionsParser.Parse(text);
-        
+
         if (expression.Error is not null)
         {
             _testOutputHelper.WriteLine(expression.Error.Message);
             _testOutputHelper.WriteLine(expression.Error.Range.ToString());
         }
-        
+
         Assert.NotNull(expression.Value);
         Assert.Null(expression.Error);
     }
@@ -395,7 +398,7 @@ public class UnitTest1
         _testOutputHelper.WriteLine(text);
 
         var expression = ExpressionsParser.Parse(text);
-        
+
         Assert.NotNull(expression.Value);
         Assert.Null(expression.Error);
 
@@ -403,7 +406,7 @@ public class UnitTest1
 
         Assert.NotNull(scopeNode);
     }
-    
+
     [Fact]
     public void CanResolveTypes()
     {
@@ -413,7 +416,7 @@ public class UnitTest1
         _testOutputHelper.WriteLine(text);
 
         var expression = ExpressionsParser.Parse(text);
-        
+
         Assert.NotNull(expression.Value);
         Assert.Null(expression.Error);
 
@@ -428,13 +431,13 @@ public class UnitTest1
             _testOutputHelper.WriteLine(type.Error.Message);
             _testOutputHelper.WriteLine(type.Error.Range.ToString());
         }
-        
+
         Assert.NotNull(type.Value);
         Assert.Null(type.Error);
-        
+
         _testOutputHelper.WriteLine(type.ToString());
     }
-    
+
     [Fact]
     public void CanEvaluateExpression()
     {
@@ -444,7 +447,7 @@ public class UnitTest1
         _testOutputHelper.WriteLine(text);
 
         var expression = ExpressionsParser.Parse(text);
-        
+
         Assert.NotNull(expression.Value);
         Assert.Null(expression.Error);
 
@@ -453,26 +456,26 @@ public class UnitTest1
         Assert.NotNull(scopeNode);
 
         var type = TypeResolver.Resolve(scopeNode);
-        
+
         if (type.IsError)
         {
             _testOutputHelper.WriteLine(type.Error.Message);
             _testOutputHelper.WriteLine(type.Error.Range.ToString());
         }
-        
+
         Assert.NotNull(type.Value);
         Assert.Null(type.Error);
-        
+
         _testOutputHelper.WriteLine(type.ToString());
 
         var value = ExpressionEvaluator.Evaluate(scopeNode);
-        
+
         Assert.NotNull(value.Value);
         Assert.Null(value.Error);
-        
+
         _testOutputHelper.WriteLine(value.Value.ToString());
     }
-    
+
     [Fact]
     public void CanEvaluateBinaryExpressions()
     {
@@ -495,32 +498,32 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
             Assert.NotNull(expression.Value);
             Assert.Null(expression.Error);
-            
+
             var scopeNode = DeclarationsCollector.Collect(expression.Value);
 
             Assert.NotNull(scopeNode);
 
             var type = TypeResolver.Resolve(scopeNode);
-        
+
             if (type.IsError)
             {
                 _testOutputHelper.WriteLine(type.Error.Message);
                 _testOutputHelper.WriteLine(type.Error.Range.ToString());
             }
-        
+
             Assert.NotNull(type.Value);
             Assert.Null(type.Error);
-        
+
             _testOutputHelper.WriteLine(type.ToString());
 
             var value = ExpressionEvaluator.Evaluate(scopeNode);
-        
+
             Assert.NotNull(value.Value);
             Assert.Null(value.Error);
 
@@ -528,7 +531,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(value.ToString());
         }
     }
-    
+
     [Fact]
     public void CanEvaluateExpressionChains()
     {
@@ -536,9 +539,12 @@ public class UnitTest1
         {
             (text: "(1 + 1) * 5.65 - 23.5 / 5", result: (1 + 1) * 5.65 - 23.5 / 5),
             (text: "number a = 142\nnumber b = 23.2523\na + b * 53 - 6.23", result: 142 + 23.2523 * 53 - 6.23),
-            (text: "4 - 2.4 / 2 * 6 - 48.023 * (234 + ((52 + 56) - 28))", result: 4 - 2.4 / 2 * 6 - 48.023 * (234 + ((52 + 56) - 28))),
-            (text: "4 * 28 - 45 * (2 - 36) < 528 * 14.65 && 32 >= 16 || 10 == 5 * (1 / 0.5)", 4 * 28 - 45 * (2 - 36) < 528 * 14.65 && 32 >= 16 || 10 == 5 * (1 / 0.5)),
-            (text: "4 * 28 - 45 > 0 || ((2 - 36) < 528 * 14.65) && (32 >= 16 || 10 == 5 * (1 / 0.5))", result: 4 * 28 - 45 > 0 || ((2 - 36) < 528 * 14.65) && (32 >= 16 || 10 == 5 * (1 / 0.5)))
+            (text: "4 - 2.4 / 2 * 6 - 48.023 * (234 + ((52 + 56) - 28))",
+                result: 4 - 2.4 / 2 * 6 - 48.023 * (234 + (52 + 56 - 28))),
+            (text: "4 * 28 - 45 * (2 - 36) < 528 * 14.65 && 32 >= 16 || 10 == 5 * (1 / 0.5)",
+                (4 * 28 - 45 * (2 - 36) < 528 * 14.65 && 32 >= 16) || 10 == 5 * (1 / 0.5)),
+            (text: "4 * 28 - 45 > 0 || ((2 - 36) < 528 * 14.65) && (32 >= 16 || 10 == 5 * (1 / 0.5))",
+                result: 4 * 28 - 45 > 0 || (2 - 36 < 528 * 14.65 && (32 >= 16 || 10 == 5 * (1 / 0.5))))
         };
 
         foreach (var (text, result) in texts)
@@ -546,32 +552,32 @@ public class UnitTest1
             _testOutputHelper.WriteLine(text);
 
             var expression = ExpressionsParser.Parse(text);
-            
+
             if (expression.Error is not null)
                 _testOutputHelper.WriteLine(expression.Error.Message);
 
             Assert.NotNull(expression.Value);
             Assert.Null(expression.Error);
-            
+
             var scopeNode = DeclarationsCollector.Collect(expression.Value);
 
             Assert.NotNull(scopeNode);
 
             var type = TypeResolver.Resolve(scopeNode);
-        
+
             if (type.IsError)
             {
                 _testOutputHelper.WriteLine(type.Error.Message);
                 _testOutputHelper.WriteLine(type.Error.Range.ToString());
             }
-        
+
             Assert.NotNull(type.Value);
             Assert.Null(type.Error);
-        
+
             _testOutputHelper.WriteLine(type.ToString());
 
             var value = ExpressionEvaluator.Evaluate(scopeNode);
-        
+
             Assert.NotNull(value.Value);
             Assert.Null(value.Error);
 
@@ -584,41 +590,45 @@ public class UnitTest1
     public void CanBuildInterpreter()
     {
         var printFunction = new Function("print",
-            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+            new[] { new Variable("text", typeof(object)) },
+            args => _testOutputHelper.WriteLine(args.First().ToString()));
         var printLineFunction = new Function("printLine",
-            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+            new[] { new Variable("text", typeof(object)) },
+            args => _testOutputHelper.WriteLine(args.First().ToString()));
 
         var piVariable = new Variable("PI", typeof(double), Math.PI);
         var eVariable = new Variable("E", typeof(double), Math.E);
-        
+
         var interpreter = InterpreterBuilder.CreateBuilder()
             .WithPredefinedFunction(printFunction)
             .WithPredefinedFunction(printLineFunction)
             .WithPredefinedVariable(piVariable)
             .WithPredefinedVariable(eVariable)
             .Build();
-        
+
         Assert.NotNull(interpreter);
     }
-    
+
     [Fact]
     public void CanUsePredefinedFunctionsAndVariables()
     {
         var printFunction = new Function("print",
-            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+            new[] { new Variable("text", typeof(object)) },
+            args => _testOutputHelper.WriteLine(args.First().ToString()));
         var printLineFunction = new Function("printLine",
-            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+            new[] { new Variable("text", typeof(object)) },
+            args => _testOutputHelper.WriteLine(args.First().ToString()));
 
         var piVariable = new Variable("PI", typeof(double), Math.PI);
         var eVariable = new Variable("E", typeof(double), Math.E);
-        
+
         var interpreter = InterpreterBuilder.CreateBuilder()
             .WithPredefinedFunction(printFunction)
             .WithPredefinedFunction(printLineFunction)
             .WithPredefinedVariable(piVariable)
             .WithPredefinedVariable(eVariable)
             .Build();
-        
+
         Assert.NotNull(interpreter);
 
         const string text =
@@ -626,35 +636,36 @@ public class UnitTest1
 
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("\nresult:\n");
-        
+
         interpreter.Initialize(text);
-        
+
         if (interpreter.HasErrors)
             _testOutputHelper.WriteLine(interpreter.Error.Message);
-        
+
         Assert.False(interpreter.HasErrors);
 
-        var result = interpreter.Interpret();
-        
+        var result = interpreter.Interpret(CancellationToken.None);
+
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
     }
-    
+
     [Fact]
     public void CanUsePredefinedFunctionsAndVariablesInLoops()
     {
         var printFunction = new Function("print",
-            new[] {new Variable("text", typeof(object))}, args => _testOutputHelper.WriteLine(args.First().ToString()));
+            new[] { new Variable("text", typeof(object)) },
+            args => _testOutputHelper.WriteLine(args.First().ToString()));
 
         var piVariable = new Variable("PI", typeof(double), Math.PI);
         var eVariable = new Variable("E", typeof(double), Math.E);
-        
+
         var interpreter = InterpreterBuilder.CreateBuilder()
             .WithPredefinedFunction(printFunction)
             .WithPredefinedVariable(piVariable)
             .WithPredefinedVariable(eVariable)
             .Build();
-        
+
         Assert.NotNull(interpreter);
 
         const string text =
@@ -662,69 +673,69 @@ public class UnitTest1
 
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("\nresult:\n");
-        
+
         interpreter.Initialize(text);
-        
+
         if (interpreter.HasErrors)
             _testOutputHelper.WriteLine(interpreter.Error.Message);
-        
+
         Assert.False(interpreter.HasErrors);
 
-        var result = interpreter.Interpret();
-        
+        var result = interpreter.Interpret(CancellationToken.None);
+
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
     }
-    
+
     [Fact]
     public void CanCalculateDivision()
     {
         const string text = "1 / 2 / 3 / 4";
 
         const double expected = 1.0 / 2.0 / 3.0 / 4.0;
-        
+
         var interpreter = InterpreterBuilder.CreateBuilder()
             .Build();
-        
+
         Assert.NotNull(interpreter);
-        
+
         interpreter.Initialize(text);
-        
+
         Assert.False(interpreter.HasErrors);
 
-        var result = interpreter.Interpret();
-        
+        var result = interpreter.Interpret(CancellationToken.None);
+
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
-        Assert.Equivalent( expected, result.Value);
-        
+
+        Assert.Equivalent(expected, result.Value);
+
         _testOutputHelper.WriteLine(result.Value.ToString());
     }
-    
+
     [Fact]
     public void CanCalculateSubtraction()
     {
         const string text = "1 - 2 - 3 - 4";
 
         const double expected = 1.0 - 2.0 - 3.0 - 4.0;
-        
+
         var interpreter = InterpreterBuilder.CreateBuilder()
             .Build();
-        
+
         Assert.NotNull(interpreter);
-        
+
         interpreter.Initialize(text);
-        
+
         Assert.False(interpreter.HasErrors);
 
-        var result = interpreter.Interpret();
-        
+        var result = interpreter.Interpret(CancellationToken.None);
+
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
-        
-        Assert.Equivalent( expected, result.Value);
-        
+
+        Assert.Equivalent(expected, result.Value);
+
         _testOutputHelper.WriteLine(result.Value.ToString());
     }
 
@@ -735,20 +746,20 @@ public class UnitTest1
             "number r = 0\nnumber c = 16\nnumber n = 104\n\nfor (number i = 0; i <= n; i = i + 1)\n{\n\tc = c / 16\n\tr = r + c * (4 / (8 * i + 1) - 2 / (8 * i + 4) - 1 / (8 * i + 5) - 1 / (8 * i + 6))\n}";
 
         var interpreter = InterpreterBuilder.CreateBuilder().Build();
-        
+
         Assert.NotNull(interpreter);
-        
+
         interpreter.Initialize(text);
-        
+
         Assert.False(interpreter.HasErrors);
 
-        var result = interpreter.Interpret();
-        
+        var result = interpreter.Interpret(CancellationToken.None);
+
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
 
         Assert.Equivalent(Math.PI, result.Value);
-        
+
         _testOutputHelper.WriteLine(result.Value.ToString());
     }
 }

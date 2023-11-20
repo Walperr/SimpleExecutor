@@ -9,7 +9,7 @@ using LanguageParser.Visitors;
 
 namespace LanguageInterpreter.Execution;
 
-public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
+public sealed class ExpressionEvaluator : ExpressionVisitor<object?, CancellationToken>
 {
     private readonly List<SyntaxException> _errors = new();
     private readonly ScopeNode _rootScope;
@@ -19,16 +19,16 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         _rootScope = rootScope;
     }
 
-    public static Result<SyntaxException, object> Evaluate(ScopeNode root)
+    public static Result<SyntaxException, object> Evaluate(ScopeNode root, CancellationToken? token = null)
     {
-        return new ExpressionEvaluator(root).Evaluate();
+        return new ExpressionEvaluator(root).Evaluate(token ?? CancellationToken.None);
     }
 
-    public Result<SyntaxException, object> Evaluate()
+    public Result<SyntaxException, object> Evaluate(CancellationToken token)
     {
         try
         {
-            var type = Visit(_rootScope.Scope);
+            var type = Visit(_rootScope.Scope, token);
 
             if (type is null)
                 return _errors.First();
@@ -41,8 +41,14 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         }
     }
 
-    public override object? VisitConstant(ConstantExpression expression)
+    public override object? VisitConstant(ConstantExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         if (expression.IsBool)
             return bool.Parse(expression.Lexeme);
         if (expression.IsNumber)
@@ -67,8 +73,14 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         return variable.Value;
     }
 
-    public override object? VisitBinary(BinaryExpression expression)
+    public override object? VisitBinary(BinaryExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         if (expression.Kind is SyntaxKind.AssignmentExpression)
         {
             if (expression.Left is ConstantExpression constant)
@@ -81,7 +93,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
                     return null;
                 }
 
-                var result = Visit(expression.Right);
+                var result = Visit(expression.Right, token);
                 if (result is null)
                     return null;
 
@@ -94,12 +106,12 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
             return null;
         }
 
-        var left = Visit(expression.Left);
+        var left = Visit(expression.Left, token);
 
         if (left is null)
             return null;
 
-        var right = Visit(expression.Right);
+        var right = Visit(expression.Right, token);
 
         if (right is null)
             return null;
@@ -107,11 +119,11 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         switch (expression.Kind)
         {
             case SyntaxKind.DivideExpression:
-                return (double) left / (double) right;
+                return (double)left / (double)right;
             case SyntaxKind.MultiplyExpression:
-                return (double) left * (double) right;
+                return (double)left * (double)right;
             case SyntaxKind.SubtractExpression:
-                return (double) left - (double) right;
+                return (double)left - (double)right;
             case SyntaxKind.AddExpression:
             {
                 if (left is double ld && right is double rd)
@@ -122,16 +134,16 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
             case SyntaxKind.RelationalExpression:
                 return expression.Operator.Lexeme switch
                 {
-                    ">" => (double) left > (double) right,
-                    "<" => (double) left < (double) right,
-                    ">=" => (double) left >= (double) right,
-                    "<=" => (double) left <= (double) right,
+                    ">" => (double)left > (double)right,
+                    "<" => (double)left < (double)right,
+                    ">=" => (double)left >= (double)right,
+                    "<=" => (double)left <= (double)right,
                     _ => throw new UnexpectedOperatorException(expression.Operator.Lexeme, expression.Operator.Range)
                 };
             case SyntaxKind.AndExpression:
-                return (bool) left && (bool) right;
+                return (bool)left && (bool)right;
             case SyntaxKind.OrExpression:
-                return (bool) left || (bool) right;
+                return (bool)left || (bool)right;
             case SyntaxKind.EqualityExpression:
                 return left.Equals(right);
         }
@@ -140,11 +152,17 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         return null;
     }
 
-    public override object? VisitFor(ForExpression expression)
+    public override object? VisitFor(ForExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         if (expression.Initialization is not null)
         {
-            var initialization = Visit(expression.Initialization);
+            var initialization = Visit(expression.Initialization, token);
 
             if (initialization is null)
                 return null;
@@ -154,7 +172,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
 
         while (true)
         {
-            var condition = Condition();
+            var condition = Condition(token);
 
             if (condition is null)
                 return null;
@@ -162,7 +180,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
             if (!condition.Value)
                 break;
 
-            var result = Visit(expression.Body);
+            var result = Visit(expression.Body, token);
 
             if (result is null)
                 return null;
@@ -172,7 +190,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
             if (expression.Step is null)
                 continue;
 
-            result = Visit(expression.Step);
+            result = Visit(expression.Step, token);
 
             if (result is null)
                 return result;
@@ -180,34 +198,46 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
 
         return value;
 
-        bool? Condition()
+        bool? Condition(CancellationToken t)
         {
             if (expression.Condition is null)
                 return true;
 
-            var result = Visit(expression.Condition);
+            var result = Visit(expression.Condition, t);
 
-            return (bool?) result;
+            return (bool?)result;
         }
     }
 
-    public override object? VisitIf(IfExpression expression)
+    public override object? VisitIf(IfExpression expression, CancellationToken token)
     {
-        var condition = Visit(expression.Condition);
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var condition = Visit(expression.Condition, token);
 
         if (condition is null)
             return null;
 
-        if ((bool) condition)
-            return Visit(expression.ThenBranch);
+        if ((bool)condition)
+            return Visit(expression.ThenBranch, token);
 
         return expression.ElseBranch is null
             ? Empty.Instance
-            : Visit(expression.ElseBranch);
+            : Visit(expression.ElseBranch, token);
     }
 
-    public override object? VisitInvocation(InvocationExpression expression)
+    public override object? VisitInvocation(InvocationExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         if (expression.Function is not ConstantExpression constant)
         {
             _errors.Add(new InterpreterException("Expected function name", expression.Function.Range));
@@ -222,7 +252,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
             return null;
         }
 
-        var args = expression.Arguments.Select(Visit).ToArray();
+        var args = expression.Arguments.Select(a => Visit(a, token)).ToArray();
 
         if (args.Any(a => a is null))
             return null;
@@ -245,39 +275,51 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         }
     }
 
-    public override object? VisitParenthesized(ParenthesizedExpression expression)
+    public override object? VisitParenthesized(ParenthesizedExpression expression, CancellationToken token)
     {
-        return Visit(expression.Expression);
+        return Visit(expression.Expression, token);
     }
 
-    public override object? VisitRepeat(RepeatExpression expression)
+    public override object? VisitRepeat(RepeatExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         object? value;
 
         while (true)
         {
-            value = Visit(expression.Body);
+            value = Visit(expression.Body, token);
             if (value is null)
                 return null;
 
-            var condition = Visit(expression.Condition);
+            var condition = Visit(expression.Condition, token);
             if (condition is null)
                 return null;
 
-            if ((bool) condition)
+            if ((bool)condition)
                 break;
         }
 
         return value;
     }
 
-    public override object? VisitScope(ScopeExpression expression)
+    public override object? VisitScope(ScopeExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         object value = Empty.Instance;
 
         foreach (var innerExpression in expression.InnerExpressions)
         {
-            var result = Visit(innerExpression);
+            var result = Visit(innerExpression, token);
             if (result is null)
                 return null;
 
@@ -287,8 +329,14 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         return value;
     }
 
-    public override object? VisitVariable(VariableExpression expression)
+    public override object? VisitVariable(VariableExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         var name = expression.NameToken.Lexeme;
 
         var variable = GetVariable(expression, name);
@@ -304,7 +352,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         if (expression.AssignmentExpression is null)
             return variable.Value ?? Empty.Instance;
 
-        var result = Visit(expression.AssignmentExpression);
+        var result = Visit(expression.AssignmentExpression, token);
 
         if (result is null)
             return null;
@@ -314,21 +362,27 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?>
         return variable.Value ?? Empty.Instance;
     }
 
-    public override object? VisitWhile(WhileExpression expression)
+    public override object? VisitWhile(WhileExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         object? value = Empty.Instance;
 
         while (true)
         {
-            var condition = Visit(expression.Condition);
+            var condition = Visit(expression.Condition, token);
 
             if (condition is null)
                 return null;
 
-            if (!(bool) condition)
+            if (!(bool)condition)
                 break;
 
-            value = Visit(expression.Body);
+            value = Visit(expression.Body, token);
 
             if (value is null)
                 return null;

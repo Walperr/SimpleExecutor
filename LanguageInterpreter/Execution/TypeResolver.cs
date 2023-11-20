@@ -6,26 +6,26 @@ using LanguageParser.Visitors;
 
 namespace LanguageInterpreter.Execution;
 
-public sealed class TypeResolver : ExpressionVisitor<Type?>
+public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
 {
     private readonly List<SyntaxException> _errors = new();
     private readonly ScopeNode _rootScope;
 
-    internal TypeResolver(ScopeNode rootScope)
+    private TypeResolver(ScopeNode rootScope)
     {
         _rootScope = rootScope;
     }
 
-    public static Result<SyntaxException, Type> Resolve(ScopeNode tree)
+    public static Result<SyntaxException, Type> Resolve(ScopeNode tree, CancellationToken? token = null)
     {
-        return new TypeResolver(tree).Resolve();
+        return new TypeResolver(tree).Resolve(token ?? CancellationToken.None);
     }
 
-    public Result<SyntaxException, Type> Resolve()
+    public Result<SyntaxException, Type> Resolve(CancellationToken token)
     {
         try
         {
-            var type = Visit(_rootScope.Scope);
+            var type = Visit(_rootScope.Scope, token);
 
             if (type is null)
                 return _errors.First();
@@ -38,8 +38,14 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
         }
     }
 
-    public override Type? VisitConstant(ConstantExpression expression)
+    public override Type? VisitConstant(ConstantExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         if (expression.IsBool)
             return typeof(bool);
         if (expression.IsNumber)
@@ -56,14 +62,20 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
         return null;
     }
 
-    public override Type? VisitBinary(BinaryExpression expression)
+    public override Type? VisitBinary(BinaryExpression expression, CancellationToken token)
     {
-        var leftType = Visit(expression.Left);
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var leftType = Visit(expression.Left, token);
 
         if (leftType is null)
             return null;
 
-        var rightType = Visit(expression.Right);
+        var rightType = Visit(expression.Right, token);
 
         if (rightType is null)
             return null;
@@ -150,11 +162,17 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
         return null;
     }
 
-    public override Type? VisitFor(ForExpression expression)
+    public override Type? VisitFor(ForExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         var conditionType = expression.Condition is null
             ? typeof(bool)
-            : Visit(expression.Condition);
+            : Visit(expression.Condition, token);
 
         if (conditionType is null)
             return null;
@@ -165,12 +183,18 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
             return null;
         }
 
-        return Visit(expression.Body);
+        return Visit(expression.Body, token);
     }
 
-    public override Type? VisitIf(IfExpression expression)
+    public override Type? VisitIf(IfExpression expression, CancellationToken token)
     {
-        var conditionType = Visit(expression.Condition);
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var conditionType = Visit(expression.Condition, token);
 
         if (conditionType is null)
             return null;
@@ -181,13 +205,13 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
             return null;
         }
 
-        var type = Visit(expression.ThenBranch);
+        var type = Visit(expression.ThenBranch, token);
 
         if (type is null)
             return null;
 
         var elseType = expression.ElseBranch is not null
-            ? Visit(expression.ElseBranch)
+            ? Visit(expression.ElseBranch, token)
             : type;
 
         if (elseType is null)
@@ -202,8 +226,14 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
         return type;
     }
 
-    public override Type? VisitInvocation(InvocationExpression expression)
+    public override Type? VisitInvocation(InvocationExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         if (expression.Function is not ConstantExpression constant)
         {
             _errors.Add(new InterpreterException("expected function name", expression.Function.Range));
@@ -220,7 +250,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
 
         for (var i = 0; i < function.ArgumentTypes.Length; i++)
         {
-            var argType = Visit(expression.Arguments[i]);
+            var argType = Visit(expression.Arguments[i], token);
 
             if (argType is null)
                 return null;
@@ -235,14 +265,20 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
         return function.ReturnType;
     }
 
-    public override Type? VisitParenthesized(ParenthesizedExpression expression)
+    public override Type? VisitParenthesized(ParenthesizedExpression expression, CancellationToken token)
     {
-        return Visit(expression.Expression);
+        return Visit(expression.Expression, token);
     }
 
-    public override Type? VisitRepeat(RepeatExpression expression)
+    public override Type? VisitRepeat(RepeatExpression expression, CancellationToken token)
     {
-        var conditionType = Visit(expression.Condition);
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var conditionType = Visit(expression.Condition, token);
 
         if (conditionType is null)
             return null;
@@ -253,16 +289,22 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
             return null;
         }
 
-        return Visit(expression.Body);
+        return Visit(expression.Body, token);
     }
 
-    public override Type? VisitScope(ScopeExpression expression)
+    public override Type? VisitScope(ScopeExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         var type = typeof(Empty);
 
         foreach (var innerExpression in expression.InnerExpressions)
         {
-            var result = Visit(innerExpression);
+            var result = Visit(innerExpression, token);
 
             if (result is null)
                 return null;
@@ -273,8 +315,14 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
         return type;
     }
 
-    public override Type? VisitVariable(VariableExpression expression)
+    public override Type? VisitVariable(VariableExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
         var name = expression.NameToken.Lexeme;
 
         var variable = GetVariable(expression, name);
@@ -289,7 +337,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
 
         if (expression.AssignmentExpression is not null)
         {
-            var result = Visit(expression.AssignmentExpression);
+            var result = Visit(expression.AssignmentExpression, token);
 
             if (result is null)
                 return null;
@@ -307,9 +355,15 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
         return variable.Type;
     }
 
-    public override Type? VisitWhile(WhileExpression expression)
+    public override Type? VisitWhile(WhileExpression expression, CancellationToken token)
     {
-        var conditionType = Visit(expression.Condition);
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var conditionType = Visit(expression.Condition, token);
 
         if (conditionType is null)
             return null;
@@ -320,7 +374,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?>
             return null;
         }
 
-        return Visit(expression.Body);
+        return Visit(expression.Body, token);
     }
 
     private Variable? GetVariable(ExpressionBase expression, string name)

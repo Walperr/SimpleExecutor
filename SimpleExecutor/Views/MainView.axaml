@@ -33,10 +33,14 @@
                       Height="1"/>
         <DockPanel Grid.Row="1" LastChildFill="True"
                     Margin="2">
-            <Button DockPanel.Dock="Left"
-                    Content="Run"
-                    Command="{Binding Interpret}"
-                    VerticalAlignment="Top"/>
+            <StackPanel DockPanel.Dock="Left">
+                <Button Content="Run"
+                        Command="{Binding InterpretCommand}"
+                        VerticalAlignment="Top"/>
+                <Button Content="Stop"
+                        Command="{Binding StopInterpreterCommand}"
+                        VerticalAlignment="Top"/>
+            </StackPanel>
             <TextBox Text="{Binding Output}"
                      IsReadOnly="True"
                      Margin="5"

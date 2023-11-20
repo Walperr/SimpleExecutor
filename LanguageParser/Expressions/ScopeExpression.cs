@@ -33,8 +33,8 @@ public sealed class ScopeExpression : ExpressionBase
         visitor.VisitScope(this);
     }
 
-    public override T Visit<T>(ExpressionVisitor<T> visitor)
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
     {
-        return visitor.VisitScope(this);
+        return visitor.VisitScope(this, state);
     }
 }

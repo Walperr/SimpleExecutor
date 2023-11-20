@@ -32,8 +32,8 @@ public sealed class ParenthesizedExpression : ExpressionBase
         visitor.VisitParenthesized(this);
     }
 
-    public override T Visit<T>(ExpressionVisitor<T> visitor)
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
     {
-        return visitor.VisitParenthesized(this);
+        return visitor.VisitParenthesized(this, state);
     }
 }

@@ -36,8 +36,8 @@ public sealed class WhileExpression : ExpressionBase
         visitor.VisitWhile(this);
     }
 
-    public override T Visit<T>(ExpressionVisitor<T> visitor)
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
     {
-        return visitor.VisitWhile(this);
+        return visitor.VisitWhile(this, state);
     }
 }

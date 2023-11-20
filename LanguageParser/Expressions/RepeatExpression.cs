@@ -40,8 +40,8 @@ public sealed class RepeatExpression : ExpressionBase
         visitor.VisitRepeat(this);
     }
 
-    public override T Visit<T>(ExpressionVisitor<T> visitor)
+    public override T Visit<T, TState>(ExpressionVisitor<T, TState> visitor, TState state)
     {
-        return visitor.VisitRepeat(this);
+        return visitor.VisitRepeat(this, state);
     }
 }
