@@ -75,6 +75,10 @@ public enum SyntaxKind
     /// </summary>
     Slash,
     /// <summary>
+    /// %
+    /// </summary>
+    Percent,
+    /// <summary>
     /// =
     /// </summary>
     EqualsSign,
@@ -159,6 +163,10 @@ public enum SyntaxKind
     /// a / b
     /// </summary>
     DivideExpression,
+    /// <summary>
+    /// a % b
+    /// </summary>
+    RemainderExpression,
     /// <summary>
     /// a + b
     /// </summary>

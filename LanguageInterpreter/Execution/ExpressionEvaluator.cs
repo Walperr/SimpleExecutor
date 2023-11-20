@@ -120,6 +120,8 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
         {
             case SyntaxKind.DivideExpression:
                 return (double)left / (double)right;
+            case SyntaxKind.RemainderExpression:
+                return (double)left % (double)right;
             case SyntaxKind.MultiplyExpression:
                 return (double)left * (double)right;
             case SyntaxKind.SubtractExpression:

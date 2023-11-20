@@ -85,6 +85,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             case SyntaxKind.DivideExpression:
             case SyntaxKind.MultiplyExpression:
             case SyntaxKind.SubtractExpression:
+            case SyntaxKind.RemainderExpression:
 
                 if (leftType == typeof(double) && rightType == typeof(double))
                     return typeof(double);

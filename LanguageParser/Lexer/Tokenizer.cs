@@ -115,6 +115,7 @@ internal sealed class Tokenizer
             "||" => SyntaxKind.ConditionalOrOperator,
             "=" => SyntaxKind.AssignmentOperator,
             "==" => SyntaxKind.EqualityOperator,
+            "%" => SyntaxKind.Percent,
             "=>" => throw new Exception("Arrow"),
             _ => SyntaxKind.Operator
         };
@@ -139,7 +140,7 @@ internal sealed class Tokenizer
 
     private bool IsOperator(char c)
     {
-        return c is '+' or '-' or '*' or '/' or '~' or '=' or '&' or '|' or '!' or '<' or '>';
+        return c is '+' or '-' or '*' or '/' or '~' or '=' or '&' or '|' or '!' or '<' or '>' or '%';
     }
 
     private bool IsDigitOrDot(char c)
@@ -217,8 +218,9 @@ internal sealed class Tokenizer
                     break;
                 case '/':
                     var comment = ReadComment();
-                    if (comment is not null)
-                        builder.Add(comment);
+                    if (comment is null)
+                        return builder.ToImmutable();
+                    builder.Add(comment);
                     break;
                 default:
                     if (char.IsWhiteSpace(_charStream.Current))
@@ -292,7 +294,7 @@ internal sealed class Tokenizer
 
     private bool IsTrivia(char c)
     {
-        return IsNewLine(c) || char.IsWhiteSpace(c) || _charStream.Current == '/';
+        return IsNewLine(c) || char.IsWhiteSpace(c) || c == '/';
     }
 
     private bool IsNewLine(char c)

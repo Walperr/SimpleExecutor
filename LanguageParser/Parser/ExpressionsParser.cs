@@ -486,7 +486,7 @@ public sealed class ExpressionsParser
             SyntaxKind.AndExpression => Precedence.ConditionalAnd,
             SyntaxKind.RelationalExpression => Precedence.Relational,
             SyntaxKind.AddExpression or SyntaxKind.SubtractExpression => Precedence.Addition,
-            SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression => Precedence.Multiplication,
+            SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression or SyntaxKind.RemainderExpression => Precedence.Multiplication,
             SyntaxKind.ParenthesizedExpression or
                 SyntaxKind.NumberLiteral or
                 SyntaxKind.StringLiteral or

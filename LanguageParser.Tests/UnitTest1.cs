@@ -764,4 +764,53 @@ public class UnitTest1
 
         _testOutputHelper.WriteLine(result.Value.ToString());
     }
+
+    [Fact]
+    public void CanCalculateReminder()
+    {
+        (string text, object result)[] texts =
+        {
+            (text: "5 % 3", result: 5.0 % 3.0),
+            (text: "25 % 3 % 2", result: 25.0 % 3.0 % 2.0),
+            (text: "10 % 2 % 5", result: 10.0 % 2.0 % 5.0),
+        };
+
+        foreach (var (text, result) in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+
+            var scopeNode = DeclarationsCollector.Collect(expression.Value);
+
+            Assert.NotNull(scopeNode);
+
+            var type = TypeResolver.Resolve(scopeNode);
+
+            if (type.IsError)
+            {
+                _testOutputHelper.WriteLine(type.Error.Message);
+                _testOutputHelper.WriteLine(type.Error.Range.ToString());
+            }
+
+            Assert.NotNull(type.Value);
+            Assert.Null(type.Error);
+
+            _testOutputHelper.WriteLine(type.ToString());
+
+            var value = ExpressionEvaluator.Evaluate(scopeNode);
+
+            Assert.NotNull(value.Value);
+            Assert.Null(value.Error);
+
+            Assert.Equivalent(result, value.Value);
+            _testOutputHelper.WriteLine(value.ToString());
+        }
+    }
 }

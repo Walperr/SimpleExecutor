@@ -165,22 +165,15 @@ public class MainViewModel : ViewModelBase
 // setColor("Transparent")
 // jump(350,310)
 //
-// number j = 0
-//
 // for(number i = 1; i < 1000; i = i + 1)
 // {
 //     rotate(15)
 //     move(i * 0.2)
 //
-//     if (j == 2)
+//     if (i % 3 == 0)
 //         setColor("red")
-//     else if (j == 1)
+//     else if (i % 2 == 0)
 //         setColor("blue")
 //     else
 //         setColor("green")
-//
-//     j = j + 1
-//
-//     if (j == 3)
-//         j = 0
 // }
