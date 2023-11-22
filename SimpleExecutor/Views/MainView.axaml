@@ -4,9 +4,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:SimpleExecutor.ViewModels"
              xmlns:views="clr-namespace:SimpleExecutor.Views"
+             xmlns:avaloniaEdit="https://github.com/avaloniaui/avaloniaedit"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:DataType="viewModels:MainViewModel"
              x:Class="SimpleExecutor.Views.MainView">
+    <UserControl.Resources>
+        
+    </UserControl.Resources>
     <Grid RowDefinitions="*, Auto">
         <Grid ColumnDefinitions="*, *">
             <Border Grid.Column="0" 
@@ -20,12 +24,20 @@
                           HorizontalAlignment="Right"
                           VerticalAlignment="Stretch"
                           Width="1"/>
-            <TextBox Grid.Column="1" Margin="2,2,4,10"
-                     BorderBrush="Gray"
-                     AcceptsReturn="True"
-                     AcceptsTab="True"
-                     Text="{Binding Code}"
-                     TextAlignment="Left"/>
+            <!-- <TextBox Grid.Column="1" Margin="2,2,4,10" -->
+            <!--          BorderBrush="Gray" -->
+            <!--          AcceptsReturn="True" -->
+            <!--          AcceptsTab="True" -->
+            <!--          Text="{Binding Code}" -->
+            <!--          TextAlignment="Left"/> -->
+            <avaloniaEdit:TextEditor Grid.Column="1"
+                                     x:Name="Editor"
+                                     BorderBrush="Gray"
+                                     BorderThickness="1"
+                                     Margin="2,2,4,10"
+                                     ShowLineNumbers="True"
+                                     LineNumbersForeground="DimGray"
+                                     FontFamily="Cascadia Code,Consolas,Menlo,Monospace"/>
         </Grid>
         <GridSplitter Grid.Row="0"
                       HorizontalAlignment="Stretch"

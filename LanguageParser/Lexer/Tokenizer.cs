@@ -6,7 +6,7 @@ using LanguageParser.Interfaces;
 
 namespace LanguageParser.Lexer;
 
-internal sealed class Tokenizer
+public sealed class Tokenizer
 {
     private readonly CharStream _charStream;
     private readonly ImmutableArray<Token>.Builder _triviaBuilder = ImmutableArray.CreateBuilder<Token>();

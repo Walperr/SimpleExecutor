@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Media;
 using LanguageInterpreter;
-using LanguageParser;
 using LanguageParser.Common;
 using ReactiveUI;
 using SimpleExecutor.Models;
@@ -14,8 +13,6 @@ namespace SimpleExecutor.ViewModels;
 public class MainViewModel : ViewModelBase
 {
     private CancellationTokenSource? _cancellation;
-
-    private readonly IInterpreter _interpreter;
     private string _code = string.Empty;
     private ICommand? _interpretCommand;
     private string _output = string.Empty;
@@ -81,7 +78,10 @@ public class MainViewModel : ViewModelBase
             Executor.TraceColor = brush;
         });
 
-        _interpreter = InterpreterBuilder.CreateBuilder()
+        TokensSyntaxColorizer = new TokensSyntaxColorizer(this);
+        ExpressionSyntaxColorizer = new ExpressionSyntaxColorizer(this);
+
+        Interpreter = InterpreterBuilder.CreateBuilder()
             .WithPredefinedFunction(printFunction)
             .WithPredefinedFunction(printLineFunction)
             .WithPredefinedFunction(sqrtFunction)
@@ -96,9 +96,14 @@ public class MainViewModel : ViewModelBase
             .Build();
     }
 
+    public IInterpreter Interpreter { get; }
+
     private int StepDuration { get; set; } = 100;
 
     public Executor Executor { get; } = new();
+
+    public ExpressionSyntaxColorizer ExpressionSyntaxColorizer { get; }
+    public TokensSyntaxColorizer TokensSyntaxColorizer { get; }
 
     public string Code
     {
@@ -128,12 +133,12 @@ public class MainViewModel : ViewModelBase
             {
                 lock (cancellation)
                 {
-                    _interpreter.Initialize(_code);
+                    Interpreter.Initialize(Code);
+                    
+                    if (!Interpreter.HasErrors)
+                        return Interpreter.Interpret(token);
 
-                    if (!_interpreter.HasErrors)
-                        return _interpreter.Interpret(token);
-
-                    Output = _interpreter.Error.Message + _interpreter.Error.Range;
+                    Output = Interpreter.Error.Message + Interpreter.Error.Range;
                     return Task.CompletedTask;
                 }
             }, token);

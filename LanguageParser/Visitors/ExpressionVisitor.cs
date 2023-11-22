@@ -1,4 +1,5 @@
 using LanguageParser.Expressions;
+using LanguageParser.Lexer;
 
 namespace LanguageParser.Visitors;
 
@@ -6,6 +7,10 @@ public abstract class ExpressionVisitor
 {
     public virtual void Visit(ExpressionBase expression) => expression.Visit(this);
 
+    public virtual void VisitTrivia(Token trivia)
+    {
+    }
+    
     public virtual void VisitBinary(BinaryExpression expression)
     {
     }
