@@ -7,7 +7,7 @@ internal sealed class PreParser
 {
     private readonly TokenStream _tokenStream;
     private SyntaxException? _error;
-    private int? _targetPlacement;
+    private readonly Stack<int> _targetPlacement = new();
 
     public PreParser(TokenStream tokenStream)
     {
@@ -48,21 +48,23 @@ internal sealed class PreParser
                 yield return new Token(SyntaxKind.OpenBrace, "", stream.Current.Range.Start);
 
                 var index = stream.Index;
-                
-                _targetPlacement = parser.ParseExpression()?.Range.End;
+
+                var target = parser.ParseExpression()?.Range.End;
 
                 while (stream.Index > index) 
                     stream.Recede();
 
-                if (_targetPlacement is null)
+                if (target is null)
                     _error = parser.Error;
+                else
+                    _targetPlacement.Push(target.Value);
             }
 
             yield return stream.Current;
-            
-            if (_targetPlacement == stream.Current.Range.End)
-                yield return new Token(SyntaxKind.CloseBrace, "", _targetPlacement.Value);
-            
+
+            if (_targetPlacement.TryPeek(out var currentTarget) && currentTarget == stream.Current.Range.End)
+                yield return new Token(SyntaxKind.CloseBrace, "", _targetPlacement.Pop());
+
             stream.Advance();
         }
         

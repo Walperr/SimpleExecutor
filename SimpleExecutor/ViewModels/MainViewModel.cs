@@ -177,3 +177,18 @@ public class MainViewModel : ViewModelBase
 //     else
 //         setColor("green")
 // }
+
+// setColor('transparent')
+// jump(350,310)
+//
+// setColor('blue')
+//
+// for (number size =6; size <= 146; size = size + 20)
+// {
+//     for (number i = 1; i < 4; i = i + 1)
+//     {
+//         move(size)
+//         rotate(90)
+//         size = size + 5
+//     }
+// }
