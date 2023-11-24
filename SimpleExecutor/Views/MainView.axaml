@@ -18,18 +18,12 @@
                     BorderBrush="Gray"
                     Margin="4,2,10,10"
                     CornerRadius="3">
-                <views:DrawingCanvas DataContext="{Binding Executor}"/>
+                <views:ExecutorView DataContext="{Binding Executor}"/>
             </Border>
             <GridSplitter Grid.Column="0"
                           HorizontalAlignment="Right"
                           VerticalAlignment="Stretch"
                           Width="1"/>
-            <!-- <TextBox Grid.Column="1" Margin="2,2,4,10" -->
-            <!--          BorderBrush="Gray" -->
-            <!--          AcceptsReturn="True" -->
-            <!--          AcceptsTab="True" -->
-            <!--          Text="{Binding Code}" -->
-            <!--          TextAlignment="Left"/> -->
             <avaloniaEdit:TextEditor Grid.Column="1"
                                      x:Name="Editor"
                                      BorderBrush="Gray"
@@ -37,7 +31,7 @@
                                      Margin="2,2,4,10"
                                      ShowLineNumbers="True"
                                      LineNumbersForeground="DimGray"
-                                     FontFamily="Cascadia Code,Consolas,Menlo,Monospace"/>
+                                     FontFamily="Consolas,Menlo,Monospace"/>
         </Grid>
         <GridSplitter Grid.Row="0"
                       HorizontalAlignment="Stretch"

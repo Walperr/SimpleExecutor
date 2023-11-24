@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
 using LanguageInterpreter;
 using LanguageParser.Common;
 using ReactiveUI;
@@ -35,21 +36,21 @@ public class MainViewModel : ViewModelBase
         var moveFunction = new Function("move", new[] { new Variable("length", typeof(double)) },
             args =>
             {
-                Executor.Move((double)args[0]);
+                Dispatcher.UIThread.Invoke(() => Executor.Move((double)args[0]));
                 Task.Delay(StepDuration).Wait();
             });
 
         var rotateFunction = new Function("rotate", new[] { new Variable("angle", typeof(double)) },
             args =>
             {
-                Executor.Rotate((double)args[0]);
+                Dispatcher.UIThread.Invoke(() => Executor.Rotate((double)args[0]));
                 Task.Delay(StepDuration).Wait();
             });
 
         var resetFunction = new Function("reset", Array.Empty<Variable>(),
             _ =>
             {
-                Executor.Reset();
+                Dispatcher.UIThread.Invoke(() => Executor.Reset());
                 Task.Delay(StepDuration).Wait();
             });
 
@@ -57,10 +58,17 @@ public class MainViewModel : ViewModelBase
             new[] { new Variable("x", typeof(double)), new Variable("y", typeof(double)) },
             args =>
             {
-                Executor.Jump((double)args[0], (double)args[1]);
+                Dispatcher.UIThread.Invoke(() => Executor.Jump((double)args[0], (double)args[1]));
                 Task.Delay(StepDuration).Wait();
             });
 
+        var widthFunction = new Function<double>("getWidth", Array.Empty<Variable>(), args => Executor.PixelWidth);
+
+        var heightFunction = new Function<double>("getHeight", Array.Empty<Variable>(), args => Executor.PixelHeight);
+
+        var timeFunction =
+            new Function<double>("getTime", Array.Empty<Variable>(), args => DateTime.UtcNow.Millisecond);
+        
         var delayFunction = new Function("delay", new[] { new Variable("milliseconds", typeof(double)) }, args =>
         {
             var time = (double)args[0];
@@ -73,9 +81,9 @@ public class MainViewModel : ViewModelBase
 
         var setColorFunction = new Function("setColor", new[] { new Variable("color", typeof(string)) }, args =>
         {
-            var brush = Brush.Parse((string)args[0]);
+            var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
 
-            Executor.TraceColor = brush;
+            Executor.TraceColor = (IImmutableSolidColorBrush)brush.ToImmutable();
         });
 
         TokensSyntaxColorizer = new TokensSyntaxColorizer(this);
@@ -93,6 +101,9 @@ public class MainViewModel : ViewModelBase
             .WithPredefinedFunction(delayFunction)
             .WithPredefinedFunction(setStepDurationFunction)
             .WithPredefinedFunction(setColorFunction)
+            .WithPredefinedFunction(widthFunction)
+            .WithPredefinedFunction(heightFunction)
+            .WithPredefinedFunction(timeFunction)
             .Build();
     }
 
@@ -196,4 +207,58 @@ public class MainViewModel : ViewModelBase
 //         rotate(90)
 //         size = size + 5
 //     }
+// }
+
+// reset();
+// number sunX = getWidth() / 2;
+// number sunY = getHeight() / 2;
+//
+// // Этот странный код для того, чтобы нарисовать "солнце"
+// setColor('transparent');
+// jump(sunX - 0.5, sunY - 0.5);
+//
+// setColor('orange');
+// for(number i = 0; i < 60; i = i  + 1)
+// {
+//     move(1);
+//     rotate(6)
+// }
+// setColor('transparent');
+// move(0);
+//
+// // Проинициализировали параметры
+// number sunWeight = 100;
+//
+// number x = sunX;
+// number y = 20;
+//
+// number planetWeight = 1;
+//
+// number velocityX = 0-0.25;
+// number velocityY = 0-0.1;
+//
+// // Поместили "планету" на место
+// setColor('transparent');
+// jump(x,y);
+//
+// number deltaTime = 10;
+//
+// setStepDuration(deltaTime);
+// setColor('blue');
+//
+// // Основной цикл, тут все считается
+// while(true)
+// {
+//     number rX = x - sunX;
+//     number rY = y - sunY;
+// 	
+//     number r = sqrt(rX * rX + rY * rY);
+// 	    	
+//     velocityX = velocityX - (sunWeight  * rX / (r * r * r)) * deltaTime;
+//     velocityY = velocityY - (sunWeight * rY / (r * r * r)) * deltaTime;
+// 		
+//     x = x + velocityX * deltaTime;
+//     y = y + velocityY * deltaTime;
+// 	
+//     jump(x, y);
 // }
