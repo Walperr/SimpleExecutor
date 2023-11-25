@@ -290,20 +290,22 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
             return null;
         }
 
-        object? value;
+        object? value = Empty.Instance;
+
+        if (Visit(expression.CountExpression, token) is not double count)
+            return null;
+
+        int i = 0;
 
         while (true)
         {
+            if (i >= count)
+                break;
+            i++;
+            
             value = Visit(expression.Body, token);
             if (value is null)
                 return null;
-
-            var condition = Visit(expression.Condition, token);
-            if (condition is null)
-                return null;
-
-            if ((bool)condition)
-                break;
         }
 
         return value;

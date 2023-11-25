@@ -27,7 +27,7 @@ internal static class Syntax
             SyntaxKind.If => "if",
             SyntaxKind.Else => "else",
             SyntaxKind.Repeat => "repeat",
-            SyntaxKind.Until => "until",
+            SyntaxKind.Times => "times",
             SyntaxKind.While => "while",
             SyntaxKind.For => "for",
             SyntaxKind.Number => "number",

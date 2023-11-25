@@ -333,27 +333,19 @@ public sealed class ExpressionsParser
         if (repeatToken is null)
             return null;
 
+        var count = ParseExpression();
+        if (count is null)
+            return null;
+
+        var timesToken = EatToken(SyntaxKind.Times);
+        if (timesToken is null)
+            return null;
+        
         var body = ParseExpression();
         if (body is null) 
             return null;
 
-        var untilToken = EatToken(SyntaxKind.Until);
-        if (untilToken is null)
-            return null;
-
-        var openToken = EatToken(SyntaxKind.OpenParenthesis);
-        if (openToken is null)
-            return null;
-
-        var condition = ParseExpression();
-        if (condition is null)
-            return null;
-
-        var closeToken = EatToken(SyntaxKind.CloseParenthesis);
-        if (closeToken is null)
-            return null;
-
-        return new RepeatExpression(repeatToken, body, untilToken, openToken, condition, closeToken);
+        return new RepeatExpression(repeatToken, count, timesToken, body);
     }
 
     private ExpressionBase? ParseWhileExpression()

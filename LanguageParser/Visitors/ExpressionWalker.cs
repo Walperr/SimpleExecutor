@@ -47,8 +47,8 @@ public abstract class ExpressionWalker : ExpressionVisitor
 
     public override void VisitRepeat(RepeatExpression expression)
     {
+        Visit(expression.CountExpression);
         Visit(expression.Body);
-        Visit(expression.Condition);
     }
 
     public override void VisitScope(ScopeExpression expression)

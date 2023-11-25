@@ -60,6 +60,11 @@ public partial class ExecutorView : UserControl
             return;
 
         using var paint = new SKPaint();
+
+        paint.Color = _executor.Background.Color.ToSKColor();
+
+        canvas.DrawRect(Bounds.ToSKRect(), paint);
+        
         paint.IsAntialias = true;
         
         paint.StrokeWidth = 2;

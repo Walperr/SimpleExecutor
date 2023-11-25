@@ -75,7 +75,7 @@ public class MainViewModel : ViewModelBase
             Task.Delay((int)time).Wait();
         });
 
-        var setStepDurationFunction = new Function("setStepDuration",
+        var setStepFunction = new Function("setStep",
             new[] { new Variable("milliseconds", typeof(double)) },
             args => { StepDuration = (int)(double)args[0]; });
 
@@ -83,7 +83,14 @@ public class MainViewModel : ViewModelBase
         {
             var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
 
-            Executor.TraceColor = (IImmutableSolidColorBrush)brush.ToImmutable();
+            Dispatcher.UIThread.Invoke(() => Executor.TraceColor = (IImmutableSolidColorBrush) brush.ToImmutable());
+        });
+
+        var setBackgroundFunction = new Function("setBackground", new[] {new Variable("color", typeof(string))}, args =>
+        {
+            var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
+
+            Dispatcher.UIThread.Invoke(() => Executor.Background = (IImmutableSolidColorBrush) brush.ToImmutable());
         });
 
         TokensSyntaxColorizer = new TokensSyntaxColorizer(this);
@@ -99,8 +106,9 @@ public class MainViewModel : ViewModelBase
             .WithPredefinedFunction(resetFunction)
             .WithPredefinedFunction(jumpFunction)
             .WithPredefinedFunction(delayFunction)
-            .WithPredefinedFunction(setStepDurationFunction)
+            .WithPredefinedFunction(setStepFunction)
             .WithPredefinedFunction(setColorFunction)
+            .WithPredefinedFunction(setBackgroundFunction)
             .WithPredefinedFunction(widthFunction)
             .WithPredefinedFunction(heightFunction)
             .WithPredefinedFunction(timeFunction)
@@ -261,4 +269,28 @@ public class MainViewModel : ViewModelBase
 //     y = y + velocityY * deltaTime;
 // 	
 //     jump(x, y);
+// }
+
+// reset()
+// setBackground('black')
+// setStep(10)
+// setColor('transparent')
+// jump(getWidth() * 0.5, getHeight() * 0.5)
+//
+// for (number i = 0; i <= 500; i = i + 1)
+// {
+//     if (i % 6 == 0)
+//         setColor('yellow')
+//     else if (i % 5 == 0)
+//         setColor('orange')
+//     else if (i % 4 == 0)
+//         setColor('green')
+//     else if (i % 3 == 0)
+//         setColor('blue')
+//     else if (i % 2 == 0)
+//         setColor('purple')
+//     else setColor('red')
+// 	
+//     move(i)
+//     rotate(59)	
 // }

@@ -279,14 +279,14 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        var conditionType = Visit(expression.Condition, token);
+        var countType = Visit(expression.CountExpression, token);
 
-        if (conditionType is null)
+        if (countType is null)
             return null;
 
-        if (conditionType != typeof(bool))
+        if (countType != typeof(double))
         {
-            _errors.Add(new ExpectedOtherTypeException(expression.Condition, conditionType, typeof(bool)));
+            _errors.Add(new ExpectedOtherTypeException(expression.CountExpression, countType, typeof(double)));
             return null;
         }
 

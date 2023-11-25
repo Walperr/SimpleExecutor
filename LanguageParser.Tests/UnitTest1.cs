@@ -247,8 +247,8 @@ public class UnitTest1
     {
         var texts = new[]
         {
-            "repeat expression() until (true)", "repeat { expression() foo(e, a) 5 - 8 } until (true)",
-            "repeat expression(); until (true);", "repeat { expression(); foo(e, a); 5 - 8; } until (true);"
+            "repeat count() times expression()", "repeat  50 times { expression() foo(e, a) 5 - 8 }",
+            "repeat count(); times expression();", "repeat 50; times { expression(); foo(e, a); 5 - 8; };"
         };
 
         foreach (var text in texts)
@@ -355,7 +355,7 @@ public class UnitTest1
     public void CanParseComplexString()
     {
         var text =
-            "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string;\"\n\nbool boolValue = false \n    \nsomeFunction(arg1, arg2)\n\nif (boolValue)\n    arg1 = someFunction2(arg)\n\nif (false)\n    a = someFunction3(arg)\nelse\n    b = someFunction4(arg)\n\nif (predicat())\n    print(\"Hello, world\")\n\nwhile(true)\n{\n    Function1()\n    Function2()\n    Function3()\n    number c = (4 + 3) * 2.5 - 38 / 2\n}\n\nfor (;;)\n{\n    ForBody()\n}\n\nrepeat Expression() until (true)\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody()\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1()\n    Expression2()\n\n    a + b + 4\n}\n\nif (1)\n    if (2)\n        DoSomething()\n    else\n        if (3)\n            doOther()\n        else\n            print(\"String\")\n\n\nif (1)\n{\n    if (2)\n        DoSomething()\n    else\n        if (3)\n            doOther()\n}\nelse\n    print(\"String\")";
+            "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string;\"\n\nbool boolValue = false \n    \nsomeFunction(arg1, arg2)\n\nif (boolValue)\n    arg1 = someFunction2(arg)\n\nif (false)\n    a = someFunction3(arg)\nelse\n    b = someFunction4(arg)\n\nif (predicat())\n    print(\"Hello, world\")\n\nwhile(true)\n{\n    Function1()\n    Function2()\n    Function3()\n    number c = (4 + 3) * 2.5 - 38 / 2\n}\n\nfor (;;)\n{\n    ForBody()\n}\n\nrepeat 100 times Expression()\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody()\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1()\n    Expression2()\n\n    a + b + 4\n}\n\nif (1)\n    if (2)\n        DoSomething()\n    else\n        if (3)\n            doOther()\n        else\n            print(\"String\")\n\n\nif (1)\n{\n    if (2)\n        DoSomething()\n    else\n        if (3)\n            doOther()\n}\nelse\n    print(\"String\")";
 
         _testOutputHelper.WriteLine(text);
 
@@ -375,7 +375,7 @@ public class UnitTest1
     public void CanParseComplexStringWithSemicolons()
     {
         var text =
-            "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string\";\n\nbool boolValue = false; \n    \nsomeFunction(arg1, arg2);\n\nif (boolValue)\n    arg1 = someFunction2(arg);\n\nif (false)\n    a = someFunction3(arg);\nelse\n    b = someFunction4(arg);\n\nif (predicat())\n    print(\"Hello, world\");\n\nwhile(true)\n{\n    Function1();\n    Function2();\n    Function3();\n    number c = (4 + 3) * 2.5 - 38 / 2;\n}\n\nfor (;;)\n{\n    ForBody();\n}\n\nrepeat Expression() until (true)\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody();\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1();\n    Expression2();\n\n    a + b + 4;\n}\n\nif (1)\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n        else\n            print(\"String\");\n\n\nif (1)\n{\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n}\nelse\n    print(\"String\");";
+            "number a;\nnumber b;\n\nstring arg1;\n\nstring arg2 = \"some string\";\n\nbool boolValue = false; \n    \nsomeFunction(arg1, arg2);\n\nif (boolValue)\n    arg1 = someFunction2(arg);\n\nif (false)\n    a = someFunction3(arg);\nelse\n    b = someFunction4(arg);\n\nif (predicat())\n    print(\"Hello, world\");\n\nwhile(true)\n{\n    Function1();\n    Function2();\n    Function3();\n    number c = (4 + 3) * 2.5 - 38 / 2;\n}\n\nfor (;;)\n{\n    ForBody();\n}\n\nrepeat 100 times Expression()\n\nfor (i = 0; i <= 23; i = i + 1)\n    ForBody();\n\nfor (;i > 0;)\n{}\n\n{\n    Expression1();\n    Expression2();\n\n    a + b + 4;\n}\n\nif (1)\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n        else\n            print(\"String\");\n\n\nif (1)\n{\n    if (2)\n        DoSomething();\n    else\n        if (3)\n            doOther();\n}\nelse\n    print(\"String\");";
 
         _testOutputHelper.WriteLine(text);
 
@@ -671,7 +671,7 @@ public class UnitTest1
         Assert.NotNull(interpreter);
 
         const string text =
-            "print(\"start\")\n\nnumber someNumber = 6\n\nfor (number i = 0; i < someNumber; i = i + 1)\n    print(\"current i = \" + i)\n\nnumber i = 0\n\nwhile (i > someNumber / 2)\n{\n    print(i + \": PI still equals \" + PI)\n\n    i = i - 1\n}\n\nnumber j = 0\n\nrepeat\n{\n    print(\"Repeat print E\")\n    print(E)\n\n    j = j + 1\n} until (j >= 5)\n\nprint(\"done\")";
+            "print(\"start\")\n\nnumber someNumber = 6\n\nfor (number i = 0; i < someNumber; i = i + 1)\n    print(\"current i = \" + i)\n\nnumber i = 0\n\nwhile (i > someNumber / 2)\n{\n    print(i + \": PI still equals \" + PI)\n\n    i = i - 1\n}\n\nnumber j = 0\n\nrepeat 5 times\n{\n    print(\"Repeat print E\")\n    print(E)\n}\nprint(\"done\")";
 
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("\nresult:\n");

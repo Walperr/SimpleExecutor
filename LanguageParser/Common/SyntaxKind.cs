@@ -100,9 +100,9 @@ public enum SyntaxKind
     /// </summary>
     Repeat,
     /// <summary>
-    /// until keyword
+    /// times keyword
     /// </summary>
-    Until,
+    Times,
     /// <summary>
     /// for keyword
     /// </summary>

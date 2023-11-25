@@ -80,14 +80,14 @@ public sealed class Tokenizer
         }
     }
 
-    private Token AdjustKeyword(Token token)
+    private static Token AdjustKeyword(Token token)
     {
         return token.Lexeme switch
         {
             "if" => new Token(SyntaxKind.If, token.Lexeme, token.Range.Start),
             "else" => new Token(SyntaxKind.Else, token.Lexeme, token.Range.Start),
             "repeat" => new Token(SyntaxKind.Repeat, token.Lexeme, token.Range.Start),
-            "until" => new Token(SyntaxKind.Until, token.Lexeme, token.Range.Start),
+            "times" => new Token(SyntaxKind.Times, token.Lexeme, token.Range.Start),
             "while" => new Token(SyntaxKind.While, token.Lexeme, token.Range.Start),
             "for" => new Token(SyntaxKind.For, token.Lexeme, token.Range.Start),
             "number" => new Token(SyntaxKind.Number, token.Lexeme, token.Range.Start),

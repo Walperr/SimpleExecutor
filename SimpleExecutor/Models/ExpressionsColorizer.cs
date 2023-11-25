@@ -98,11 +98,11 @@ public sealed class ExpressionsColorizer : ExpressionVisitor
     {
         SetForeground(expression.RepeatToken, KeywordBrush);
 
+        Visit(expression.CountExpression);
+        
+        SetForeground(expression.TimesToken, KeywordBrush);
+
         Visit(expression.Body);
-
-        SetForeground(expression.UntilToken, KeywordBrush);
-
-        Visit(expression.Condition);
     }
 
     public override void VisitScope(ScopeExpression expression)
