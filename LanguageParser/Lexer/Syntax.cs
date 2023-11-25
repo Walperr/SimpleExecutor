@@ -76,6 +76,8 @@ internal static class Syntax
     {
         return tokenKind switch
         {
+            SyntaxKind.Plus => SyntaxKind.UnaryPlusExpression,
+            SyntaxKind.Minus => SyntaxKind.UnaryMinusExpression,
             SyntaxKind.PlusPlus => SyntaxKind.PreIncrementExpression,
             SyntaxKind.MinusMinus => SyntaxKind.PreDecrementExpression,
             _ => SyntaxKind.None

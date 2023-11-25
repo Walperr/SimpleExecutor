@@ -14,6 +14,7 @@ internal sealed class CharStream : IStream<char>
     public int Index { get; private set; }
     public char Current => Index < Text.Length ? Text[Index] : '\0';
     public char Next => Index + 1 < Text.Length ? Text[Index + 1] : '\0';
+    public char Previous => Index > 0 ? Text[Index - 1] : '\0';
     public bool CanAdvance => Index < Text.Length;
 
     public void Advance()

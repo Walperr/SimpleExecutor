@@ -141,14 +141,8 @@ public sealed class ExpressionsParser
             
             if (operand is null)
                 return null;
-
-            if (operand is not ConstantExpression constant)
-            {
-                _errors.Add(new SyntaxException("Expected constant expression", operand.Range));
-                return null;
-            }
             
-            leftOperand = new PrefixUnaryExpression(operatorKind, operatorToken, constant);
+            leftOperand = new PrefixUnaryExpression(operatorKind, operatorToken, operand);
         }
         else
         {
@@ -166,6 +160,9 @@ public sealed class ExpressionsParser
         while (true)
         {
             var tk = _tokens.Current.Kind;
+
+            if (_tokens.Previous?.Kind == SyntaxKind.Semicolon)
+                return leftOperand;
 
             SyntaxKind opKind;
 
@@ -207,7 +204,7 @@ public sealed class ExpressionsParser
             Debug.Assert(Syntax.IsBinaryExpression(tk));
             
             var constantExpression = new ConstantExpression(SyntaxKind.Operator, opToken);
-            
+
             var rightOperand = ParseSubExpression(newPrecedence);
             
             if (rightOperand is null)
@@ -229,6 +226,9 @@ public sealed class ExpressionsParser
         if (expression is null)
             return null;
 
+        if (_tokens.Current.Kind == SyntaxKind.Semicolon)
+            return expression;
+        
         while (true)
         {
             switch (_tokens.Current.Kind)
@@ -530,9 +530,17 @@ public sealed class ExpressionsParser
             SyntaxKind.OrExpression => Precedence.ConditionalOr,
             SyntaxKind.AndExpression => Precedence.ConditionalAnd,
             SyntaxKind.RelationalExpression => Precedence.Relational,
+            
             SyntaxKind.AddExpression or SyntaxKind.SubtractExpression => Precedence.Addition,
-            SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression or SyntaxKind.RemainderExpression => Precedence.Multiplication,
-            SyntaxKind.PreIncrementExpression or SyntaxKind.PreDecrementExpression => Precedence.Unary,
+            SyntaxKind.MultiplyExpression or
+                SyntaxKind.DivideExpression or
+                SyntaxKind.RemainderExpression => Precedence.Multiplication,
+            
+            SyntaxKind.PreIncrementExpression or
+                SyntaxKind.PreDecrementExpression or
+                SyntaxKind.UnaryPlusExpression or
+                SyntaxKind.UnaryMinusExpression => Precedence.Unary,
+            
             SyntaxKind.ParenthesizedExpression or
                 SyntaxKind.NumberLiteral or
                 SyntaxKind.StringLiteral or

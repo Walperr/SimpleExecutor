@@ -129,7 +129,7 @@ public class UnitTest1
     [Fact]
     public void CanParseUnaryExpressions()
     {
-        var texts = new[] {"i++", "i--", "++i", "--i"};
+        var texts = new[] {"i++", "i--", "++i", "--i", "+a", "-a", "-0", "+0"};
 
         foreach (var text in texts)
         {
@@ -562,6 +562,12 @@ public class UnitTest1
             (text: "number i = 0; ++i", result: 1.0),
             (text: "number i = 0; i--", result: 0.0),
             (text: "number i = 0; --i", result: -1.0),
+            (text: "number i = 1; -i", result: -1.0),
+            (text: "number i = 1; +i", result: 1.0),
+            (text: "number i = -(5 - 6); -i", result: - -(5.0 - 6.0)),
+            (text: "number i = -(5 - 6); i", result: -(5.0 - 6.0)),
+            (text: "-5", result: -5.0),
+            (text: "5", result: 5.0),
         };
 
         foreach (var (text, result) in texts)
@@ -814,7 +820,7 @@ public class UnitTest1
     public void CanCalculatePI()
     {
         const string text =
-            "number r = 0\nnumber c = 16\nnumber n = 104\n\nfor (number i = 0; i <= n; i = i + 1)\n{\n\tc = c / 16\n\tr = r + c * (4 / (8 * i + 1) - 2 / (8 * i + 4) - 1 / (8 * i + 5) - 1 / (8 * i + 6))\n}";
+            "number r = 0\nnumber c = 16\nnumber n = 104\n\nfor (number i = 0; i <= n; i++)\n{\n\tc = c / 16\n\tr = r + c * (4 / (8 * i + 1) - 2 / (8 * i + 4) - 1 / (8 * i + 5) - 1 / (8 * i + 6))\n}";
 
         var interpreter = InterpreterBuilder.CreateBuilder().Build();
 

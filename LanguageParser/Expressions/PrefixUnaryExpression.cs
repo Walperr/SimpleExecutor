@@ -8,9 +8,9 @@ namespace LanguageParser.Expressions;
 public sealed class PrefixUnaryExpression : ExpressionBase
 {
     public Token OperatorToken { get; }
-    public ConstantExpression Operand { get; }
+    public ExpressionBase Operand { get; }
 
-    internal PrefixUnaryExpression(SyntaxKind kind, Token operatorToken, ConstantExpression operand) : base(kind)
+    internal PrefixUnaryExpression(SyntaxKind kind, Token operatorToken, ExpressionBase operand) : base(kind)
     {
         OperatorToken = operatorToken;
         Operand = operand;

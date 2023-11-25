@@ -25,6 +25,8 @@ internal sealed class TokenStream : IStream<Token>
     public Token Current => Index < Length ? _tokens[Index] : EOF;
     public Token Next => Index + 1 < Length ? _tokens[Index + 1] : EOF;
 
+    public Token? Previous => Index > 0 ? _tokens[Index - 1] : null; 
+
     public bool CanAdvance => Index + 1 < _tokens.Length;
 
     public void Advance()

@@ -394,38 +394,64 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
         return value;
     }
 
-    public override object? VisitPrefixUnary(PrefixUnaryExpression expression, CancellationToken state)
+    public override object? VisitPrefixUnary(PrefixUnaryExpression expression, CancellationToken token)
     {
-        var variable = GetVariable(expression, expression.Operand.Lexeme);
+        var value = Visit(expression.Operand, token);
+        
+        if (value is null)
+            return null;
+
+        switch (expression.Kind)
+        {
+            case SyntaxKind.PreIncrementExpression:
+            case SyntaxKind.PreDecrementExpression:
+                return VisitPrefixIncrementDecrement(expression, token);
+            case SyntaxKind.UnaryPlusExpression:
+                return value;
+            case SyntaxKind.UnaryMinusExpression:
+                return -(double)value;
+            default:
+                _errors.Add(new InterpreterException($"Unknown prefix operator", expression.Range));
+                return null;
+        }
+    }
+
+    private object? VisitPrefixIncrementDecrement(PrefixUnaryExpression expression, CancellationToken token)
+    {
+        if (expression.Operand is not ConstantExpression constant)
+        {
+            _errors.Add(new InterpreterException("Expected constant expression", expression.Operand.Range));
+            return null;
+        }
+
+        var variable = GetVariable(expression, constant.Lexeme);
 
         if (variable is null || !variable.IsDeclared)
         {
-            _errors.Add(new UndeclaredVariableException(expression.Operand.Lexeme, expression.Range));
+            _errors.Add(new UndeclaredVariableException(constant.Lexeme, constant.Range));
             return null;
         }
-
+        
         if (variable.IsUnset)
         {
-            _errors.Add(new UninitializedVariableException(expression.Operand.Lexeme, expression.Range));
+            _errors.Add(new UninitializedVariableException(constant.Lexeme, constant.Range));
             return null;
         }
 
-        var value = (double) variable.Value;
+        var value = (double)variable.Value;
 
         switch (expression.Kind)
         {
             case SyntaxKind.PreIncrementExpression:
                 variable.SetValue(value + 1);
-                break;
+                return variable.Value;
             case SyntaxKind.PreDecrementExpression:
                 variable.SetValue(value - 1);
-                break;
+                return variable.Value;
             default:
                 _errors.Add(new InterpreterException($"Unknown prefix operator", expression.Range));
                 return null;
         }
-
-        return variable.Value;
     }
 
     public override object? VisitPostfixUnary(PostfixUnaryExpression expression, CancellationToken state)

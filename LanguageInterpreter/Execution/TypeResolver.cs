@@ -384,16 +384,13 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             _errors.Add(new InterpreterException("Operation was cancelled", default));
             return null;
         }
+        
+        var type = Visit(expression.Operand, token);
 
-        var variable = GetVariable(expression, expression.Operand.Lexeme);
-
-        if (variable is null)
-        {
-            _errors.Add(new UndeclaredVariableException(expression.Operand.Lexeme, expression.Range));
+        if (type is null)
             return null;
-        }
 
-        if (variable.Type == typeof(double))
+        if (type == typeof(double))
             return typeof(double);
 
         _errors.Add(new InterpreterException("Left operand of prefix expression must be number", expression.Range));

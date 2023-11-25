@@ -188,6 +188,14 @@ public enum SyntaxKind
     /// </summary>
     PostIncrementExpression,
     /// <summary>
+    /// +i
+    /// </summary>
+    UnaryPlusExpression,
+    /// <summary>
+    /// -i
+    /// </summary>
+    UnaryMinusExpression,
+    /// <summary>
     /// --i
     /// </summary>
     PreDecrementExpression,

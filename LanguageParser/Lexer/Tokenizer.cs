@@ -52,10 +52,6 @@ public sealed class Tokenizer
                 return SimpleToken(SyntaxKind.Comma);
             case '"' or '\'':
                 return StringToken();
-            // case '+':
-            //     return SimpleToken(SyntaxKind.Plus);
-            // case '-':
-            //     return SimpleToken(SyntaxKind.Minus);
             case '*':
                 return SimpleToken(SyntaxKind.Asterisk);
             case '/':

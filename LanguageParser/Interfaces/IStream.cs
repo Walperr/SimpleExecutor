@@ -7,6 +7,8 @@ public interface IStream<out T>
     public T Current { get; }
     public T Next { get; }
     
+    public T? Previous { get; }
+    
     public bool CanAdvance { get; }
     public void Advance();
     public bool CanRecede { get; }
