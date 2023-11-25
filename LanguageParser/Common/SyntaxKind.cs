@@ -79,6 +79,14 @@ public enum SyntaxKind
     /// </summary>
     Percent,
     /// <summary>
+    /// ++
+    /// </summary>
+    PlusPlus,
+    /// <summary>
+    /// --
+    /// </summary>
+    MinusMinus,
+    /// <summary>
     /// =
     /// </summary>
     EqualsSign,
@@ -171,6 +179,22 @@ public enum SyntaxKind
     /// a + b
     /// </summary>
     AddExpression,
+    /// <summary>
+    /// ++i
+    /// </summary>
+    PreIncrementExpression,
+    /// <summary>
+    /// i++
+    /// </summary>
+    PostIncrementExpression,
+    /// <summary>
+    /// --i
+    /// </summary>
+    PreDecrementExpression,
+    /// <summary>
+    /// i--
+    /// </summary>
+    PostDecrementExpression,
     /// <summary>
     /// a - b
     /// </summary>

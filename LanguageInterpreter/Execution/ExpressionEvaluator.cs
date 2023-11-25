@@ -1,6 +1,5 @@
 using System.Globalization;
 using LanguageInterpreter.Common;
-using LanguageParser;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
 using LanguageParser.Visitors;
@@ -389,6 +388,74 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
             value = Visit(expression.Body, token);
 
             if (value is null)
+                return null;
+        }
+
+        return value;
+    }
+
+    public override object? VisitPrefixUnary(PrefixUnaryExpression expression, CancellationToken state)
+    {
+        var variable = GetVariable(expression, expression.Operand.Lexeme);
+
+        if (variable is null || !variable.IsDeclared)
+        {
+            _errors.Add(new UndeclaredVariableException(expression.Operand.Lexeme, expression.Range));
+            return null;
+        }
+
+        if (variable.IsUnset)
+        {
+            _errors.Add(new UninitializedVariableException(expression.Operand.Lexeme, expression.Range));
+            return null;
+        }
+
+        var value = (double) variable.Value;
+
+        switch (expression.Kind)
+        {
+            case SyntaxKind.PreIncrementExpression:
+                variable.SetValue(value + 1);
+                break;
+            case SyntaxKind.PreDecrementExpression:
+                variable.SetValue(value - 1);
+                break;
+            default:
+                _errors.Add(new InterpreterException($"Unknown prefix operator", expression.Range));
+                return null;
+        }
+
+        return variable.Value;
+    }
+
+    public override object? VisitPostfixUnary(PostfixUnaryExpression expression, CancellationToken state)
+    {
+        var variable = GetVariable(expression, expression.Operand.Lexeme);
+
+        if (variable is null || !variable.IsDeclared)
+        {
+            _errors.Add(new UndeclaredVariableException(expression.Operand.Lexeme, expression.Range));
+            return null;
+        }
+
+        if (variable.IsUnset)
+        {
+            _errors.Add(new UninitializedVariableException(expression.Operand.Lexeme, expression.Range));
+            return null;
+        }
+
+        var value = (double) variable.Value;
+
+        switch (expression.Kind)
+        {
+            case SyntaxKind.PostIncrementExpression:
+                variable.SetValue(value + 1);
+                break;
+            case SyntaxKind.PostDecrementExpression:
+                variable.SetValue(value - 1);
+                break;
+            default:
+                _errors.Add(new InterpreterException($"Unknown postfix operator", expression.Range));
                 return null;
         }
 

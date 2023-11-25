@@ -4,6 +4,7 @@ using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
+using LanguageParser.Interfaces;
 using LanguageParser.Lexer;
 using LanguageParser.Visitors;
 using static SimpleExecutor.Models.SyntaxColors;
@@ -89,11 +90,6 @@ public sealed class ExpressionsColorizer : ExpressionVisitor
             Visit(argument);
     }
 
-    public override void VisitParenthesized(ParenthesizedExpression expression)
-    {
-        Visit(expression.Expression);
-    }
-
     public override void VisitRepeat(RepeatExpression expression)
     {
         SetForeground(expression.RepeatToken, KeywordBrush);
@@ -104,13 +100,7 @@ public sealed class ExpressionsColorizer : ExpressionVisitor
 
         Visit(expression.Body);
     }
-
-    public override void VisitScope(ScopeExpression expression)
-    {
-        foreach (var innerExpression in expression.InnerExpressions)
-            Visit(innerExpression);
-    }
-
+    
     public override void VisitVariable(VariableExpression expression)
     {
         SetForeground(expression.TypeToken, KeywordBrush);
@@ -148,7 +138,7 @@ public sealed class ExpressionsColorizer : ExpressionVisitor
         SetForeground(token.Range, brush);
     }
 
-    private static IImmutableBrush GetTokenBrush(Token token)
+    private static IImmutableBrush GetTokenBrush(ISyntaxElement token)
     {
         if (token.IsNumber)
             return NumberBrush;

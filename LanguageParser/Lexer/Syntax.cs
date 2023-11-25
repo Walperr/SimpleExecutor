@@ -23,6 +23,8 @@ internal static class Syntax
             SyntaxKind.Asterisk => "*",
             SyntaxKind.Slash => "/",
             SyntaxKind.Percent => "%",
+            SyntaxKind.PlusPlus => "++",
+            SyntaxKind.MinusMinus => "--",
             SyntaxKind.EqualsSign => "=",
             SyntaxKind.If => "if",
             SyntaxKind.Else => "else",
@@ -61,6 +63,36 @@ internal static class Syntax
             SyntaxKind.ConditionalOrOperator or SyntaxKind.Or => SyntaxKind.OrExpression,
             SyntaxKind.AssignmentOperator => SyntaxKind.AssignmentExpression,
             SyntaxKind.Operator => SyntaxKind.RelationalExpression,
+            _ => SyntaxKind.None
+        };
+    }
+
+    public static bool IsPrefixUnaryExpression(SyntaxKind tokenKind)
+    {
+        return ConvertToPrefixUnaryExpression(tokenKind) != SyntaxKind.None;
+    }
+
+    public static SyntaxKind ConvertToPrefixUnaryExpression(SyntaxKind tokenKind)
+    {
+        return tokenKind switch
+        {
+            SyntaxKind.PlusPlus => SyntaxKind.PreIncrementExpression,
+            SyntaxKind.MinusMinus => SyntaxKind.PreDecrementExpression,
+            _ => SyntaxKind.None
+        };
+    }
+
+    public static bool IsPostfixUnaryExpression(SyntaxKind tokenKind)
+    {
+        return ConvertToPostfixUnaryExpression(tokenKind) != SyntaxKind.None;
+    }
+
+    public static SyntaxKind ConvertToPostfixUnaryExpression(SyntaxKind tokenKind)
+    {
+        return tokenKind switch
+        {
+            SyntaxKind.PlusPlus => SyntaxKind.PostIncrementExpression,
+            SyntaxKind.MinusMinus => SyntaxKind.PostDecrementExpression,
             _ => SyntaxKind.None
         };
     }

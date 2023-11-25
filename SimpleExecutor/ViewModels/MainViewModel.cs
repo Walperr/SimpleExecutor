@@ -189,7 +189,7 @@ public class MainViewModel : ViewModelBase
 // setColor("Transparent")
 // jump(350,310)
 //
-// for(number i = 1; i < 1000; i = i + 1)
+// for(number i = 1; i < 1000; i++)
 // {
 //     rotate(15)
 //     move(i * 0.2)
@@ -209,7 +209,7 @@ public class MainViewModel : ViewModelBase
 //
 // for (number size =6; size <= 146; size = size + 20)
 // {
-//     for (number i = 1; i < 4; i = i + 1)
+//     for (number i = 1; i < 4; i++)
 //     {
 //         move(size)
 //         rotate(90)
@@ -226,7 +226,7 @@ public class MainViewModel : ViewModelBase
 // jump(sunX - 0.5, sunY - 0.5);
 //
 // setColor('orange');
-// for(number i = 0; i < 60; i = i  + 1)
+// for(number i = 0; i < 60; i++)
 // {
 //     move(1);
 //     rotate(6)
@@ -251,7 +251,7 @@ public class MainViewModel : ViewModelBase
 //
 // number deltaTime = 10;
 //
-// setStepDuration(deltaTime);
+// setStep(deltaTime);
 // setColor('blue');
 //
 // // Основной цикл, тут все считается

@@ -69,4 +69,14 @@ public abstract class ExpressionWalker : ExpressionVisitor
         Visit(expression.Condition);
         Visit(expression.Body);
     }
+
+    public override void VisitPrefixUnary(PrefixUnaryExpression expression)
+    {
+        Visit(expression.Operand);
+    }
+
+    public override void VisitPostfixUnary(PostfixUnaryExpression expression)
+    {
+        Visit(expression.Operand);
+    }
 }

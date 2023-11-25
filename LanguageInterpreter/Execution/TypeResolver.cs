@@ -1,5 +1,4 @@
 using LanguageInterpreter.Common;
-using LanguageParser;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
 using LanguageParser.Visitors;
@@ -376,6 +375,52 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         }
 
         return Visit(expression.Body, token);
+    }
+
+    public override Type? VisitPrefixUnary(PrefixUnaryExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var variable = GetVariable(expression, expression.Operand.Lexeme);
+
+        if (variable is null)
+        {
+            _errors.Add(new UndeclaredVariableException(expression.Operand.Lexeme, expression.Range));
+            return null;
+        }
+
+        if (variable.Type == typeof(double))
+            return typeof(double);
+
+        _errors.Add(new InterpreterException("Left operand of prefix expression must be number", expression.Range));
+        return null;
+    }
+
+    public override Type? VisitPostfixUnary(PostfixUnaryExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var variable = GetVariable(expression, expression.Operand.Lexeme);
+
+        if (variable is null)
+        {
+            _errors.Add(new UndeclaredVariableException(expression.Operand.Lexeme, expression.Range));
+            return null;
+        }
+
+        if (variable.Type == typeof(double))
+            return typeof(double);
+
+        _errors.Add(new InterpreterException("Right operand of postfix expression must be number", expression.Range));
+        return null;
     }
 
     private Variable? GetVariable(ExpressionBase expression, string name)

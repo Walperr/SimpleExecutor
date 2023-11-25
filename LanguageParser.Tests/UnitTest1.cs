@@ -127,6 +127,25 @@ public class UnitTest1
     }
 
     [Fact]
+    public void CanParseUnaryExpressions()
+    {
+        var texts = new[] {"i++", "i--", "++i", "--i"};
+
+        foreach (var text in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+        }
+    }
+
+    [Fact]
     public void CanParseScopeExpressions()
     {
         var texts = new[]
@@ -493,6 +512,56 @@ public class UnitTest1
             (text: "45 / 0.5", result: 45 / 0.5),
             (text: "true or false", true || false),
             (text: "true and false", result: true && false)
+        };
+
+        foreach (var (text, result) in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+
+            var scopeNode = DeclarationsCollector.Collect(expression.Value);
+
+            Assert.NotNull(scopeNode);
+
+            var type = TypeResolver.Resolve(scopeNode);
+
+            if (type.IsError)
+            {
+                _testOutputHelper.WriteLine(type.Error.Message);
+                _testOutputHelper.WriteLine(type.Error.Range.ToString());
+            }
+
+            Assert.NotNull(type.Value);
+            Assert.Null(type.Error);
+
+            _testOutputHelper.WriteLine(type.ToString());
+
+            var value = ExpressionEvaluator.Evaluate(scopeNode);
+
+            Assert.NotNull(value.Value);
+            Assert.Null(value.Error);
+
+            Assert.Equivalent(result, value.Value);
+            _testOutputHelper.WriteLine(value.ToString());
+        }
+    }
+    
+    [Fact]
+    public void CanEvaluateUnaryExpressions()
+    {
+        (string text, object result)[] texts =
+        {
+            (text: "number i = 0; i++", result: 0.0),
+            (text: "number i = 0; ++i", result: 1.0),
+            (text: "number i = 0; i--", result: 0.0),
+            (text: "number i = 0; --i", result: -1.0),
         };
 
         foreach (var (text, result) in texts)

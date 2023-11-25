@@ -129,7 +129,32 @@ public sealed class ExpressionsParser
 
     private ExpressionBase? ParseSubExpression(Precedence precedence)
     {
-        var leftOperand = ParseTerm();
+        var tokenKind = _tokens.Current.Kind;
+        ExpressionBase? leftOperand;
+
+        if (Syntax.IsPrefixUnaryExpression(tokenKind))
+        {
+            var operatorKind = Syntax.ConvertToPrefixUnaryExpression(tokenKind);
+            var newPrecedence = GetPrecedence(operatorKind);
+            var operatorToken = EatToken();
+            var operand = ParseSubExpression(newPrecedence);
+            
+            if (operand is null)
+                return null;
+
+            if (operand is not ConstantExpression constant)
+            {
+                _errors.Add(new SyntaxException("Expected constant expression", operand.Range));
+                return null;
+            }
+            
+            leftOperand = new PrefixUnaryExpression(operatorKind, operatorToken, constant);
+        }
+        else
+        {
+            leftOperand = ParseTerm();
+        }
+        
         return ParseExpressionContinued(leftOperand, precedence);
     }
 
@@ -204,12 +229,28 @@ public sealed class ExpressionsParser
         if (expression is null)
             return null;
 
-        if (_tokens.Current.Kind is not SyntaxKind.OpenParenthesis)
-            return expression;
-
-        var function = ParseFunctionInvocation(expression);
-
-        return function;
+        while (true)
+        {
+            switch (_tokens.Current.Kind)
+            {
+                case SyntaxKind.OpenParenthesis:
+                    expression = ParseFunctionInvocation(expression);
+                    if (expression is null)
+                        return null;
+                    continue;
+                
+                case SyntaxKind.PlusPlus when expression is ConstantExpression constant:
+                    expression = new PostfixUnaryExpression(Syntax.ConvertToPostfixUnaryExpression(_tokens.Current.Kind), constant, EatToken());
+                    continue;
+                case SyntaxKind.MinusMinus when expression is ConstantExpression constant:
+                    expression = new PostfixUnaryExpression(Syntax.ConvertToPostfixUnaryExpression(_tokens.Current.Kind), constant, EatToken());
+                    continue;
+                
+                default:
+                    return expression;
+                
+            }
+        }
     }
 
     private ExpressionBase? ParseTermWithoutPostfix()
@@ -267,15 +308,27 @@ public sealed class ExpressionsParser
             return new VariableExpression(typeToken, nameToken);
 
         _tokens.Recede();
+
+        var start = _tokens.Index;
         
         var value = ParseExpression();
-        if (value is BinaryExpression { Kind: SyntaxKind.AssignmentExpression } assignment)
-            return new VariableExpression(typeToken, nameToken, assignment);
         
-        _errors.Add(new SyntaxException("Expected assignment", _tokens.Current.Range));
-        return null;
+        switch (value)
+        {
+            case BinaryExpression { Kind: SyntaxKind.AssignmentExpression } assignment:
+                return new VariableExpression(typeToken, nameToken, assignment);
+            case null:
+                _errors.Remove(_errors.Last());
+                while (_tokens.Index > start)
+                    _tokens.Recede();
+                return new VariableExpression(typeToken, nameToken);
+            default:
+                _errors.Add(new SyntaxException("Expected assignment", _tokens.Current.Range));
+                return null;
+        }
     }
 
+    //todo: add support 'for i to n' and 'for i down to n' loops, and when collections is ready add support 'for i in seq' loop
     private ExpressionBase? ParseForExpression()
     {
         var forToken = EatToken(SyntaxKind.For);
@@ -479,6 +532,7 @@ public sealed class ExpressionsParser
             SyntaxKind.RelationalExpression => Precedence.Relational,
             SyntaxKind.AddExpression or SyntaxKind.SubtractExpression => Precedence.Addition,
             SyntaxKind.MultiplyExpression or SyntaxKind.DivideExpression or SyntaxKind.RemainderExpression => Precedence.Multiplication,
+            SyntaxKind.PreIncrementExpression or SyntaxKind.PreDecrementExpression => Precedence.Unary,
             SyntaxKind.ParenthesizedExpression or
                 SyntaxKind.NumberLiteral or
                 SyntaxKind.StringLiteral or
@@ -491,7 +545,9 @@ public sealed class ExpressionsParser
                 SyntaxKind.ScopeExpression or 
                 SyntaxKind.True or 
                 SyntaxKind.False or
-                SyntaxKind.VariableExpression => Precedence.Primary,
+                SyntaxKind.VariableExpression or
+                SyntaxKind.PostIncrementExpression or
+                SyntaxKind.PostDecrementExpression => Precedence.Primary,
             _ => throw new InvalidEnumArgumentException()
         };
     }
@@ -506,6 +562,7 @@ public sealed class ExpressionsParser
         Relational,
         Addition,
         Multiplication,
+        Unary,
         Primary
     }
 }
