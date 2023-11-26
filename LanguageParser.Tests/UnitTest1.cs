@@ -289,8 +289,9 @@ public class UnitTest1
     {
         var texts = new[]
         {
-            "number c = 0", "number a;", "string s = 'asfafw'", "string s = \"fewfwef\"", "string s;", "bool b = false",
+            "number c = 0", "number a", "string s = 'asfafw'", "string s = \"fewfwef\"", "string s;", "bool b = false",
             "bool b =  true", "bool b;",
+            "number[] f", "string[] arr", "bool[]",
             "number c = 0;", "string s = 'asfafw';", "string s = \"fewfwef\";", "bool b = false;", "bool b =  true;"
         };
 

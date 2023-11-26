@@ -79,7 +79,7 @@ public sealed class TokensColorizer
         if (token.IsNumber)
             return NumberBrush;
 
-        if (token.IsKeyWord)
+        if (token.IsKeyword)
             return KeywordBrush;
 
         if (token.IsString)

@@ -39,6 +39,14 @@ public enum SyntaxKind
     /// </summary>
     CloseBrace,
     /// <summary>
+    /// [
+    /// </summary>
+    OpenBracket,
+    /// <summary>
+    /// ]
+    /// </summary>
+    CloseBracket,
+    /// <summary>
     /// ,
     /// </summary>
     Comma,
@@ -235,6 +243,10 @@ public enum SyntaxKind
     /// f(x)
     /// </summary>
     InvocationExpression,
+    /// <summary>
+    /// f[i]
+    /// </summary>
+    ElementAccessExpression,
     /// <summary>
     /// (expression)
     /// </summary>

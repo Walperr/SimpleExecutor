@@ -13,6 +13,8 @@ internal static class Syntax
             SyntaxKind.CloseParenthesis => ")",
             SyntaxKind.OpenBrace => "{",
             SyntaxKind.CloseBrace => "}",
+            SyntaxKind.OpenBracket => "[",
+            SyntaxKind.CloseBracket => "]",
             SyntaxKind.Comma => ",",
             SyntaxKind.Semicolon => ";",
             SyntaxKind.Word => "word",

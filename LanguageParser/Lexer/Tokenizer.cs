@@ -48,6 +48,10 @@ public sealed class Tokenizer
                 return SimpleToken(SyntaxKind.OpenBrace);
             case '}':
                 return SimpleToken(SyntaxKind.CloseBrace);
+            case '[':
+                return SimpleToken(SyntaxKind.OpenBracket);
+            case ']':
+                return SimpleToken(SyntaxKind.CloseBracket);
             case ',':
                 return SimpleToken(SyntaxKind.Comma);
             case '"' or '\'':
