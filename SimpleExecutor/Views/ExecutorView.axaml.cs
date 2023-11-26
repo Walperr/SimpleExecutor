@@ -76,7 +76,7 @@ public partial class ExecutorView : UserControl
         
         for (var i = 1; i < trace.Count; i++)
         {
-            paint.Color = trace[i - 1].brush.Color.ToSKColor();
+            paint.Color = trace[i].brush.Color.ToSKColor();
             canvas.DrawLine(trace[i - 1].point.ToSKPoint(), trace[i].point.ToSKPoint(), paint);
         }
         

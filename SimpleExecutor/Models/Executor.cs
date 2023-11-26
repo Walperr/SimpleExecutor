@@ -75,6 +75,6 @@ public sealed class Executor : ViewModelBase
     {
         Position = new Point(x, y);
         
-        Trace.Add((new Point(Position.X, Position.Y), TraceColor));
+        Trace.Add((new Point(Position.X, Position.Y), Brushes.Transparent));
     }
 }

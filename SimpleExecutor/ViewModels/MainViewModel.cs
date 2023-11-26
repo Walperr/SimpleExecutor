@@ -294,3 +294,50 @@ public class MainViewModel : ViewModelBase
 //     move(i)
 //     rotate(59)	
 // }
+
+// reset()
+// setStep(1)
+// setColor('red')
+// jump(200,200)
+// number la=30
+// number ta=360/la
+//
+// repeat la times
+// {
+//     move(50)
+//     rotate(-ta)
+// }
+// jump(330,100)
+//
+// repeat la times
+// {
+//     move(10)
+//     rotate(-ta)
+// }
+//
+// jump(450,100)
+//
+// repeat la times
+// {
+//     move(10)
+//     rotate(-ta)
+// }
+//
+// jump(410,250)
+// rotate(-90)
+//
+// repeat 3 times
+// {
+//     move(50)
+//     rotate(-120)
+// }
+//
+// jump(410,300)
+// number f=20
+// number k=360/f
+//
+// rotate(90)
+// repeat f / 2 times
+// {   move(10)
+//     rotate(-k)
+// }
