@@ -61,6 +61,14 @@ public abstract class ExpressionVisitor
     public virtual void VisitPostfixUnary(PostfixUnaryExpression expression)
     {
     }
+
+    public virtual void VisitElementAccess(ElementAccessExpression expression)
+    {
+    }
+
+    public virtual void VisitArrayInitialization(ArrayInitializationExpression expression)
+    {
+    }
 }
 
 public abstract class ExpressionVisitor<T, TState>
@@ -93,4 +101,8 @@ public abstract class ExpressionVisitor<T, TState>
     public abstract T VisitPrefixUnary(PrefixUnaryExpression expression, TState state);
 
     public abstract T VisitPostfixUnary(PostfixUnaryExpression expression, TState state);
+
+    public abstract T VisitElementAccess(ElementAccessExpression expression, TState state);
+
+    public abstract T VisitArrayInitialization(ArrayInitializationExpression expression, TState state);
 }

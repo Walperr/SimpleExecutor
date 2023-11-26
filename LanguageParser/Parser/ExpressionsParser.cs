@@ -172,7 +172,7 @@ public sealed class ExpressionsParser
             }
             else if (IsVariableDeclaration(leftOperand))
             {
-                
+                return ParseVariableDeclaration(leftOperand);
             }
             else
             {
@@ -220,9 +220,48 @@ public sealed class ExpressionsParser
         return leftOperand;
     }
 
+    private ExpressionBase? ParseVariableDeclaration(ExpressionBase typeExpression)
+    {
+        var name = EatToken(SyntaxKind.Word);
+        if (name is null)
+            return null;
+
+        if (_tokens.Current.Kind is SyntaxKind.Semicolon)
+            return new VariableExpression(typeExpression, name);
+        
+        _tokens.Recede();
+
+        var checkpoint = _tokens.Index;
+
+        var expression = ParseSubExpression(Precedence.Expression);
+
+        switch (expression)
+        {
+            case BinaryExpression {Kind: SyntaxKind.AssignmentExpression} assignment:
+                return new VariableExpression(typeExpression, name, assignment);
+            case null:
+                _errors.Remove(_errors.Last());
+                while (_tokens.Index > checkpoint) 
+                    _tokens.Recede();
+                return new VariableExpression(typeExpression, name);
+            default:
+                _errors.Add(new SyntaxException("Expected assignment", _tokens.Current.Range));
+                return null;
+        }
+    }
+
     private bool IsVariableDeclaration(ExpressionBase expression)
     {
-        throw new NotImplementedException();
+        if (_tokens.Current.Kind is not SyntaxKind.Word)
+            return false;
+
+        if (expression is ConstantExpression { IsTypeKeyword: true })
+            return true;
+
+        if (expression is ElementAccessExpression { IsArrayDeclaration: true })
+            return true;
+
+        return false;
     }
 
     private ExpressionBase? ParseTerm()
@@ -286,12 +325,17 @@ public sealed class ExpressionsParser
             case SyntaxKind.False:
             case SyntaxKind.StringLiteral:
             case SyntaxKind.NumberLiteral:
+            case SyntaxKind.Number:
+            case SyntaxKind.String:
+            case SyntaxKind.Bool:
             case SyntaxKind.Word:
                 return new ConstantExpression(_tokens.Current.Kind, EatToken());
             case SyntaxKind.OpenParenthesis:
                 return ParseParenthesizedExpression();
             case SyntaxKind.OpenBrace:
                 return ParseScopeExpression();
+            case SyntaxKind.OpenBracket:
+                return ArrayInitializationExpression();
             case SyntaxKind.If:
                 return ParseIfExpression();
             case SyntaxKind.While:
@@ -300,12 +344,6 @@ public sealed class ExpressionsParser
                 return ParseRepeatExpression();
             case SyntaxKind.For:
                 return ParseForExpression();
-            case SyntaxKind.Number:
-                return ParseVariable(SyntaxKind.Number);
-            case SyntaxKind.String:
-                return ParseVariable(SyntaxKind.String);
-            case SyntaxKind.Bool:
-                return ParseVariable(SyntaxKind.Bool);
             case SyntaxKind.EOF:
                 _errors.Add(new UnexpectedEofException(_tokens.Current.Range));
                 return null;
@@ -315,50 +353,16 @@ public sealed class ExpressionsParser
         }
     }
 
-    private ExpressionBase? ParseVariable(SyntaxKind kind)
+    private ExpressionBase? ArrayInitializationExpression()
     {
-        var typeToken = EatToken(kind);
-        if (typeToken is null)
-            return null;
+        if (TryParseSeparated(SyntaxKind.OpenBracket, SyntaxKind.CloseBracket, SyntaxKind.Comma,
+                out var open,
+                out var elements,
+                out var close))
+            
+            return new ArrayInitializationExpression(open, elements, close);
 
-        Token? openBracket = null;
-        Token? closeBracket = null;
-
-        if (_tokens.Current.Kind is SyntaxKind.OpenBracket)
-        {
-            openBracket = EatToken();
-            closeBracket = EatToken(SyntaxKind.CloseBracket);
-
-            if (closeBracket is null)
-                return null;
-        }
-        
-        var nameToken = EatToken(SyntaxKind.Word);
-        if (nameToken is null)
-            return null;
-        
-        if (_tokens.Current.Kind is SyntaxKind.Semicolon)
-            return new VariableExpression(typeToken, openBracket, closeBracket, nameToken);
-
-        _tokens.Recede();
-
-        var start = _tokens.Index;
-        
-        var value = ParseExpression();
-        
-        switch (value)
-        {
-            case BinaryExpression { Kind: SyntaxKind.AssignmentExpression } assignment:
-                return new VariableExpression(typeToken, openBracket, closeBracket, nameToken, assignment);
-            case null:
-                _errors.Remove(_errors.Last());
-                while (_tokens.Index > start)
-                    _tokens.Recede();
-                return new VariableExpression(typeToken, openBracket, closeBracket, nameToken);
-            default:
-                _errors.Add(new SyntaxException("Expected assignment", _tokens.Current.Range));
-                return null;
-        }
+        return null;
     }
 
     //todo: add support 'for i to n' and 'for i down to n' loops, and when collections is ready add support 'for i in seq' loop
@@ -580,6 +584,7 @@ public sealed class ExpressionsParser
                 SyntaxKind.Word or
                 SyntaxKind.InvocationExpression or
                 SyntaxKind.ElementAccessExpression or
+                SyntaxKind.ArrayInitializationExpression or
                 SyntaxKind.IfExpression or
                 SyntaxKind.WhileExpression or
                 SyntaxKind.RepeatExpression or

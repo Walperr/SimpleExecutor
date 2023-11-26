@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Globalization;
 using LanguageInterpreter.Common;
 using LanguageParser.Common;
@@ -82,27 +83,69 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
 
         if (expression.Kind is SyntaxKind.AssignmentExpression)
         {
-            if (expression.Left is ConstantExpression constant)
+            object? result;
+            switch (expression.Left)
             {
-                var variable = GetVariable(expression, constant.Lexeme);
+                case ConstantExpression constant:
+                    var variable = GetVariable(expression, constant.Lexeme);
 
-                if (variable is null || !variable.IsDeclared)
+                    if (variable is null || !variable.IsDeclared)
+                    {
+                        _errors.Add(new UndeclaredVariableException(constant.Lexeme, expression.Range));
+                        return null;
+                    }
+
+                    result = Visit(expression.Right, token);
+                    if (result is null)
+                        return null;
+
+                    variable.SetValue(result);
+
+                    return variable.Value;
+                case ElementAccessExpression indexer when indexer.Elements.Length != 1:
+                    _errors.Add(new InterpreterException("Wrong arguments count in array indexer", indexer.Range));
+                    return null;
+                case ElementAccessExpression indexer:
                 {
-                    _errors.Add(new UndeclaredVariableException(constant.Lexeme, expression.Range));
-                    return null;
+                    if (Visit(indexer.Elements[0], token) is not double index)
+                    {
+                        _errors.Add(new InterpreterException("Parameter type mismatch 'index', expected number",
+                            indexer.Elements[0].Range));
+                        return null;
+                    }
+                
+                    var value = Visit(indexer.Expression, token);
+
+                    if (value is null)
+                        return null;
+
+                    result = Visit(expression.Right, token);
+                    if (result is null)
+                        return null;
+
+                    switch (value)
+                    {
+                        case double[] doubles:
+                            doubles[(long)index] = (double)result;
+                            return result;
+                        case string[] strings:
+                            strings[(long)index] = (string)result;
+                            return result;
+                        case bool[] bools:
+                            bools[(long)index] = (bool)result;
+                            return result;
+                        case not null when value.GetType().IsAssignableTo(typeof(Array[])):
+                            ((Array[])value)[(long)index] = (Array)result;
+                            return result;
+                        default:
+                            _errors.Add(new InterpreterException("Cannot use indexer for non array expressions", indexer.Range));
+                            return null;
+                    }
                 }
-
-                var result = Visit(expression.Right, token);
-                if (result is null)
+                default:
+                    _errors.Add(new InterpreterException("Cannot assign value to expression", expression.Range));
                     return null;
-
-                variable.SetValue(result);
-
-                return variable.Value;
             }
-
-            _errors.Add(new InterpreterException("Cannot assign value to expression", expression.Range));
-            return null;
         }
 
         var left = Visit(expression.Left, token);
@@ -396,6 +439,12 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
 
     public override object? VisitPrefixUnary(PrefixUnaryExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+        
         var value = Visit(expression.Operand, token);
         
         if (value is null)
@@ -418,6 +467,12 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
 
     private object? VisitPrefixIncrementDecrement(PrefixUnaryExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+        
         if (expression.Operand is not ConstantExpression constant)
         {
             _errors.Add(new InterpreterException("Expected constant expression", expression.Operand.Range));
@@ -454,8 +509,14 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
         }
     }
 
-    public override object? VisitPostfixUnary(PostfixUnaryExpression expression, CancellationToken state)
+    public override object? VisitPostfixUnary(PostfixUnaryExpression expression, CancellationToken token)
     {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+        
         var variable = GetVariable(expression, expression.Operand.Lexeme);
 
         if (variable is null || !variable.IsDeclared)
@@ -486,6 +547,109 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
         }
 
         return value;
+    }
+
+    public override object? VisitElementAccess(ElementAccessExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        if (expression.IsArrayDeclaration)
+            return Empty.Instance;
+
+        if (expression.IsArrayConstructor)
+        {
+            if (expression.Elements.Length != 1)
+            {
+                _errors.Add(new InterpreterException("Array constructor should have only 1 size argument",
+                    expression.Range));
+                return null;
+            }
+
+            if (Visit(expression.Elements[0], token) is not double size)
+            {
+                _errors.Add(new InterpreterException("Parameter type mismatch 'size', expected number",
+                    expression.Elements[0].Range));
+                return null;
+            }
+
+            var typeResult = TypeResolver.Resolve(_rootScope, expression, token);
+
+            if (typeResult.IsError)
+            {
+                _errors.Add(typeResult.Error);
+                return null;
+            }
+
+            if (typeResult.Value == typeof(double[]))
+                return new double[(long)size];
+            if (typeResult.Value == typeof(string[]))
+                return new string[(long)size];
+            if (typeResult.Value == typeof(bool[]))
+                return new bool[(long)size];
+            if (typeResult.Value == typeof(Array[]))
+                return new Array[(long)size];
+
+            _errors.Add(new InterpreterException("Unknown type", expression.Expression.Range));
+            return null;
+        }
+
+        if (Visit(expression.Expression, token) is not Array array)
+        {
+            _errors.Add(new InterpreterException("Cannot index non array expression", expression.Expression.Range));
+            return null;
+        }
+            
+        if (Visit(expression.Elements[0], token) is not double index)
+        {
+            _errors.Add(new InterpreterException("Parameter type mismatch 'index', expected number",
+                expression.Elements[0].Range));
+            return null;
+        }
+
+        return ((IList)array)[(int)index];
+    }
+
+    public override object? VisitArrayInitialization(ArrayInitializationExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        if (expression.Elements.IsDefaultOrEmpty)
+        {
+            _errors.Add(new InterpreterException("Array initializer cannot be empty", expression.Range));
+            return null;
+        }
+
+        var first = Visit(expression.Elements[0], token);
+
+        IList? array = first switch
+        {
+            double => new double[expression.Elements.Length],
+            string => new double[expression.Elements.Length],
+            bool => new bool[expression.Elements.Length],
+            Array => new Array[expression.Elements.Length],
+            _ => null
+        };
+
+        if (array is null)
+        {
+            _errors.Add(new InterpreterException("Unkonwn type", expression.Range));
+            return null;
+        }
+
+        array[0] = first;
+
+        for (int i = 1; i < array.Count; i++) 
+            array[i] = Visit(expression.Elements[i], token);
+
+        return array;
     }
 
     private Variable? GetVariable(ExpressionBase expression, string name)

@@ -248,6 +248,10 @@ public enum SyntaxKind
     /// </summary>
     ElementAccessExpression,
     /// <summary>
+    /// [a, b, c, d]
+    /// </summary>
+    ArrayInitializationExpression,
+    /// <summary>
     /// (expression)
     /// </summary>
     ParenthesizedExpression,

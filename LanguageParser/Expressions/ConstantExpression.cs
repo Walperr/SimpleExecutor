@@ -20,6 +20,8 @@ public sealed class ConstantExpression : ExpressionBase, ISyntaxElement
 
     public bool IsBool => Kind is SyntaxKind.True or SyntaxKind.False;
 
+    public bool IsTypeKeyword => Kind is SyntaxKind.Number or SyntaxKind.String or SyntaxKind.Bool;
+
     public string Lexeme => Token.Lexeme;
 
     public override IEnumerable<ISyntaxElement> GetAllElements()

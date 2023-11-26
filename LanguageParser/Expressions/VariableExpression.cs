@@ -7,33 +7,23 @@ namespace LanguageParser.Expressions;
 
 public sealed class VariableExpression : ExpressionBase
 {
-    public Token TypeToken { get; }
-    public Token? OpenBracket { get; }
-    public Token? CloseBracket { get; }
-    public Token NameToken { get; }
-    public ExpressionBase? AssignmentExpression { get; }
-
-    public bool IsArrayVariable => OpenBracket is not null && CloseBracket is not null;
-
-    internal VariableExpression(Token typeToken, Token? openBracket, Token? closeBracket, Token nameToken, BinaryExpression? assignmentExpression = null) : base(SyntaxKind.VariableExpression)
+    internal VariableExpression(ExpressionBase typeExpression, Token nameToken,
+        BinaryExpression? assignmentExpression = null) : base(SyntaxKind.VariableExpression)
     {
-        TypeToken = typeToken;
-        OpenBracket = openBracket;
-        CloseBracket = closeBracket;
+        TypeExpression = typeExpression;
         NameToken = nameToken;
         AssignmentExpression = assignmentExpression;
     }
 
+    public ExpressionBase TypeExpression { get; }
+    public Token NameToken { get; }
+    public ExpressionBase? AssignmentExpression { get; }
+
     public override IEnumerable<ISyntaxElement> GetAllElements()
     {
-        yield return TypeToken;
-        if (OpenBracket is not null)
-            yield return OpenBracket;
-        if (CloseBracket is not null)
-            yield return CloseBracket;
-        
+        yield return TypeExpression;
         yield return NameToken;
-        
+
         if (AssignmentExpression is not null)
             yield return AssignmentExpression;
     }

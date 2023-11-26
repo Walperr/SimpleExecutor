@@ -1,3 +1,4 @@
+using LanguageParser.Expressions;
 using LanguageParser.Lexer;
 
 namespace LanguageParser.Common;
@@ -54,6 +55,13 @@ public sealed class VariableAlreadyDeclaredException : SyntaxException
 {
     internal VariableAlreadyDeclaredException(string variableName, StringRange range) : base(
         $"Variable already declared in this scope. {variableName}", range)
+    {
+    }
+}
+
+public sealed class UnexpectedExpressionException : SyntaxException
+{
+    internal UnexpectedExpressionException(ExpressionBase expression) : base("Unexpected expression", expression.Range)
     {
     }
 }

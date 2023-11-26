@@ -33,7 +33,7 @@ public sealed class DeclarationsCollector : ExpressionWalker
         _currentNode?.Children.Add(node);
 
         var currentNode = _currentNode;
-        
+
         _currentNode = node;
 
         _root ??= _currentNode;
@@ -47,16 +47,47 @@ public sealed class DeclarationsCollector : ExpressionWalker
     {
         var name = expression.NameToken.Lexeme;
 
-        var variable = expression.TypeToken.Kind switch
+        switch (expression.TypeExpression)
         {
-            SyntaxKind.Number => new Variable(name, typeof(double)),
-            SyntaxKind.String => new Variable(name, typeof(string)),
-            SyntaxKind.Bool => new Variable(name, typeof(bool)),
-            _ => throw new UnexpectedTokenException(expression.TypeToken)
-        };
+            case ConstantExpression { IsTypeKeyword: true } constant: // is simple variable
+            {
+                var variable = constant.Kind switch
+                {
+                    SyntaxKind.Number => new Variable(name, typeof(double)),
+                    SyntaxKind.String => new Variable(name, typeof(string)),
+                    SyntaxKind.Bool => new Variable(name, typeof(bool)),
+                    _ => throw new UnexpectedTokenException(constant.Token)
+                };
 
-        if (!(_currentNode?.AddVariable(variable) ?? true))
-            throw new VariableAlreadyDeclaredException(name, expression.Range);
+                if (!(_currentNode?.AddVariable(variable) ?? true))
+                    throw new VariableAlreadyDeclaredException(name, expression.Range);
+                break;
+            }
+            case ElementAccessExpression { IsArrayDeclaration: true } arrayDeclaration: // is array
+            {
+                Variable variable;
+                if (arrayDeclaration.Expression is ElementAccessExpression { IsArrayDeclaration: true }) // is array of arrays
+                {
+                    variable = new Variable(name, typeof(Array[]));
+                }
+                else
+                {
+                    variable = arrayDeclaration.Expression.Kind switch
+                    {
+                        SyntaxKind.Number => new Variable(name, typeof(double[])),
+                        SyntaxKind.String => new Variable(name, typeof(string[])),
+                        SyntaxKind.Bool => new Variable(name, typeof(bool[])),
+                        _ => throw new UnexpectedTokenException(((ConstantExpression)arrayDeclaration.Expression).Token)
+                    };
+                }
+                
+                if (!(_currentNode?.AddVariable(variable) ?? true))
+                    throw new VariableAlreadyDeclaredException(name, expression.Range);
+                break;
+            }
+            default:
+                throw new UnexpectedExpressionException(expression.TypeExpression);
+        }
 
         base.VisitVariable(expression);
     }
