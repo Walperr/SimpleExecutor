@@ -176,6 +176,15 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
                     return variable.Type;
                 }
 
+                if (expression.Left is ElementAccessExpression {IsElementAccessor: true, Elements.Length: 1} indexerExpression)
+                {
+                    if (leftType == rightType)
+                        return leftType;
+
+                    _errors.Add(new IncompatibleOperandsException(expression.Operator, leftType));
+                    return null;
+                }
+
                 break;
             case SyntaxKind.EqualityExpression:
                 return typeof(bool);
@@ -477,7 +486,16 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         var indexType = Visit(expression.Elements[0], token);
 
         if (indexType == typeof(double))
-            return type;
+        {
+            if (type == typeof(double[]))
+                return typeof(double);
+            if (type == typeof(string[]))
+                return typeof(string);
+            if (type == typeof(bool[]))
+                return typeof(bool);
+            if (type.IsAssignableTo(typeof(Array[])))
+                return typeof(Array);
+        }
 
         _errors.Add(new InterpreterException("Array indexer must be number", expression.Elements[0].Range));
         return null;
@@ -507,7 +525,17 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        return type;
+        if (type == typeof(double))
+            return typeof(double[]);
+        if (type == typeof(string))
+            return typeof(string[]);
+        if (type == typeof(bool))
+            return typeof(bool[]);
+        if (type?.IsAssignableTo(typeof(Array)) ?? false)
+            return typeof(Array[]);
+
+        _errors.Add(new InterpreterException("Unkown type", expression.Range));
+        return null;
     }
 
     private Variable? GetVariable(ExpressionBase expression, string name)

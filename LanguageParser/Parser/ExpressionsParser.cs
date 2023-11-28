@@ -229,9 +229,9 @@ public sealed class ExpressionsParser
         if (_tokens.Current.Kind is SyntaxKind.Semicolon)
             return new VariableExpression(typeExpression, name);
         
-        _tokens.Recede();
-
         var checkpoint = _tokens.Index;
+        
+        _tokens.Recede();
 
         var expression = ParseSubExpression(Precedence.Expression);
 
@@ -239,6 +239,10 @@ public sealed class ExpressionsParser
         {
             case BinaryExpression {Kind: SyntaxKind.AssignmentExpression} assignment:
                 return new VariableExpression(typeExpression, name, assignment);
+            case ConstantExpression constant when constant.Lexeme == name.Lexeme:
+                while (_tokens.Index > checkpoint) 
+                    _tokens.Recede();
+                return new VariableExpression(typeExpression, name);
             case null:
                 _errors.Remove(_errors.Last());
                 while (_tokens.Index > checkpoint) 

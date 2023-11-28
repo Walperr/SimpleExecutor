@@ -632,7 +632,7 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
         IList? array = first switch
         {
             double => new double[expression.Elements.Length],
-            string => new double[expression.Elements.Length],
+            string => new string[expression.Elements.Length],
             bool => new bool[expression.Elements.Length],
             Array => new Array[expression.Elements.Length],
             _ => null
