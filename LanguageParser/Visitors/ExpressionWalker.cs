@@ -12,12 +12,12 @@ public abstract class ExpressionWalker : ExpressionVisitor
 
     public override void VisitFor(ForExpression expression)
     {
-        if (expression.Initialization is not null) 
+        if (expression.Initialization is not null)
             Visit(expression.Initialization);
 
         if (expression.Condition is not null)
             Visit(expression.Condition);
-        
+
         if (expression.Step is not null)
             Visit(expression.Step);
 
@@ -36,7 +36,7 @@ public abstract class ExpressionWalker : ExpressionVisitor
     {
         Visit(expression.Function);
 
-        foreach (var argument in expression.Arguments) 
+        foreach (var argument in expression.Arguments)
             Visit(argument);
     }
 
@@ -53,14 +53,16 @@ public abstract class ExpressionWalker : ExpressionVisitor
 
     public override void VisitScope(ScopeExpression expression)
     {
-        foreach (var innerExpression in expression.InnerExpressions) 
+        foreach (var innerExpression in expression.InnerExpressions)
             Visit(innerExpression);
     }
 
     public override void VisitVariable(VariableExpression expression)
     {
-        if (expression.AssignmentExpression is not null) 
-            
+        Visit(expression.TypeExpression);
+
+        if (expression.AssignmentExpression is not null)
+
             Visit(expression.AssignmentExpression);
     }
 
@@ -78,5 +80,19 @@ public abstract class ExpressionWalker : ExpressionVisitor
     public override void VisitPostfixUnary(PostfixUnaryExpression expression)
     {
         Visit(expression.Operand);
+    }
+
+    public override void VisitElementAccess(ElementAccessExpression expression)
+    {
+        Visit(expression.Expression);
+
+        foreach (var argument in expression.Elements)
+            Visit(argument);
+    }
+
+    public override void VisitArrayInitialization(ArrayInitializationExpression expression)
+    {
+        foreach (var element in expression.Elements)
+            Visit(element);
     }
 }

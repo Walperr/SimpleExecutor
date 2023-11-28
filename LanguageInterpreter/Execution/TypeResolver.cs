@@ -20,11 +20,34 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         return new TypeResolver(tree).Resolve(token ?? CancellationToken.None);
     }
 
-    public Result<SyntaxException, Type> Resolve(CancellationToken token)
+    public static Result<SyntaxException, Type> Resolve(ScopeNode tree, ExpressionBase expression,
+        CancellationToken? token = null)
+    {
+        return new TypeResolver(tree).Resolve(expression, token ?? CancellationToken.None);
+    }
+
+    private Result<SyntaxException, Type> Resolve(CancellationToken token)
     {
         try
         {
             var type = Visit(_rootScope.Scope, token);
+
+            if (type is null)
+                return _errors.First();
+
+            return type;
+        }
+        catch (Exception e)
+        {
+            return new UnhandledInterpreterException(e);
+        }
+    }
+
+    private Result<SyntaxException, Type> Resolve(ExpressionBase expression, CancellationToken token)
+    {
+        try
+        {
+            var type = Visit(expression, token);
 
             if (type is null)
                 return _errors.First();
@@ -45,11 +68,11 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        if (expression.IsBool)
+        if (expression.IsBool || expression.Kind == SyntaxKind.Bool)
             return typeof(bool);
-        if (expression.IsNumber)
+        if (expression.IsNumber || expression.Kind == SyntaxKind.Number)
             return typeof(double);
-        if (expression.IsString)
+        if (expression.IsString || expression.Kind == SyntaxKind.String)
             return typeof(string);
 
         var variable = GetVariable(expression, expression.Lexeme);
@@ -151,6 +174,15 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
                     }
 
                     return variable.Type;
+                }
+
+                if (expression.Left is ElementAccessExpression {IsElementAccessor: true, Elements.Length: 1} indexerExpression)
+                {
+                    if (leftType == rightType)
+                        return leftType;
+
+                    _errors.Add(new IncompatibleOperandsException(expression.Operator, leftType));
+                    return null;
                 }
 
                 break;
@@ -384,7 +416,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             _errors.Add(new InterpreterException("Operation was cancelled", default));
             return null;
         }
-        
+
         var type = Visit(expression.Operand, token);
 
         if (type is null)
@@ -417,6 +449,92 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return typeof(double);
 
         _errors.Add(new InterpreterException("Right operand of postfix expression must be number", expression.Range));
+        return null;
+    }
+
+    public override Type? VisitElementAccess(ElementAccessExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var type = Visit(expression.Expression, token);
+
+        if (type is null)
+            return null;
+
+        if (expression.IsArrayDeclaration || expression.IsArrayConstructor)
+        {
+            if (type == typeof(double))
+                return typeof(double[]);
+            if (type == typeof(string))
+                return typeof(string[]);
+            if (type == typeof(bool))
+                return typeof(bool[]);
+            if (type.IsAssignableTo(typeof(Array)))
+                return typeof(Array[]);
+        }
+
+        if (expression.Elements.Length != 1)
+        {
+            _errors.Add(new InterpreterException("Array indexer must contain only 1 index", expression.Range));
+            return null;
+        }
+
+        var indexType = Visit(expression.Elements[0], token);
+
+        if (indexType == typeof(double))
+        {
+            if (type == typeof(double[]))
+                return typeof(double);
+            if (type == typeof(string[]))
+                return typeof(string);
+            if (type == typeof(bool[]))
+                return typeof(bool);
+            if (type.IsAssignableTo(typeof(Array[])))
+                return typeof(Array);
+        }
+
+        _errors.Add(new InterpreterException("Array indexer must be number", expression.Elements[0].Range));
+        return null;
+    }
+
+    public override Type? VisitArrayInitialization(ArrayInitializationExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        if (expression.Elements.IsDefaultOrEmpty)
+            return typeof(Empty);
+
+        var type = Visit(expression.Elements[0], token);
+
+        foreach (var element in expression.Elements)
+        {
+            if (type == Visit(element, token))
+                continue;
+
+            _errors.Add(new InterpreterException("Array cannot contain elements of different types",
+                element.Range));
+
+            return null;
+        }
+
+        if (type == typeof(double))
+            return typeof(double[]);
+        if (type == typeof(string))
+            return typeof(string[]);
+        if (type == typeof(bool))
+            return typeof(bool[]);
+        if (type?.IsAssignableTo(typeof(Array)) ?? false)
+            return typeof(Array[]);
+
+        _errors.Add(new InterpreterException("Unkown type", expression.Range));
         return null;
     }
 

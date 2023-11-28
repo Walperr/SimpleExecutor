@@ -129,7 +129,7 @@ public class UnitTest1
     [Fact]
     public void CanParseUnaryExpressions()
     {
-        var texts = new[] {"i++", "i--", "++i", "--i", "+a", "-a", "-0", "+0"};
+        var texts = new[] { "i++", "i--", "++i", "--i", "+a", "-a", "-0", "+0" };
 
         foreach (var text in texts)
         {
@@ -289,8 +289,10 @@ public class UnitTest1
     {
         var texts = new[]
         {
-            "number c = 0", "number a;", "string s = 'asfafw'", "string s = \"fewfwef\"", "string s;", "bool b = false",
+            "number c = 0", "number a", "string s = 'asfafw'", "string s = \"fewfwef\"", "string s;", "bool b = false",
             "bool b =  true", "bool b;",
+            "number[] f", "string[] arr", "bool[]", "number[] numbers = [1,2,3,4,5]", "string[] ss = ['s','ss','sss']",
+            "number[] ns = number[10]",
             "number c = 0;", "string s = 'asfafw';", "string s = \"fewfwef\";", "bool b = false;", "bool b =  true;"
         };
 
@@ -552,7 +554,7 @@ public class UnitTest1
             _testOutputHelper.WriteLine(value.ToString());
         }
     }
-    
+
     [Fact]
     public void CanEvaluateUnaryExpressions()
     {
@@ -567,7 +569,7 @@ public class UnitTest1
             (text: "number i = -(5 - 6); -i", result: - -(5.0 - 6.0)),
             (text: "number i = -(5 - 6); i", result: -(5.0 - 6.0)),
             (text: "-5", result: -5.0),
-            (text: "5", result: 5.0),
+            (text: "5", result: 5.0)
         };
 
         foreach (var (text, result) in texts)
@@ -847,7 +849,110 @@ public class UnitTest1
         {
             (text: "5 % 3", result: 5.0 % 3.0),
             (text: "25 % 3 % 2", result: 25.0 % 3.0 % 2.0),
-            (text: "10 % 2 % 5", result: 10.0 % 2.0 % 5.0),
+            (text: "10 % 2 % 5", result: 10.0 % 2.0 % 5.0)
+        };
+
+        foreach (var (text, result) in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+
+            var scopeNode = DeclarationsCollector.Collect(expression.Value);
+
+            Assert.NotNull(scopeNode);
+
+            var type = TypeResolver.Resolve(scopeNode);
+
+            if (type.IsError)
+            {
+                _testOutputHelper.WriteLine(type.Error.Message);
+                _testOutputHelper.WriteLine(type.Error.Range.ToString());
+            }
+
+            Assert.NotNull(type.Value);
+            Assert.Null(type.Error);
+
+            _testOutputHelper.WriteLine(type.ToString());
+
+            var value = ExpressionEvaluator.Evaluate(scopeNode);
+
+            Assert.NotNull(value.Value);
+            Assert.Null(value.Error);
+
+            Assert.Equivalent(result, value.Value);
+            _testOutputHelper.WriteLine(value.ToString());
+        }
+    }
+
+    [Fact]
+    public void CanEvaluateArrayDeclarations()
+    {
+        (string text, object result)[] texts =
+        {
+            (text: "number[] numbers", result: Empty.Instance),
+            (text: "number[] numbers = number[10]", result: new double[10]),
+            (text: "number n = number[10][0]", result: 0.0),
+            (text: "number[] numbers = [1,2,3,4,5]", result: new[] { 1.0, 2.0, 3.0, 4.0, 5.0 }),
+            (text: "number n = [1,2,3,4,5][3]", result: 4.0),
+            (text: "string[] colors = ['red', 'blue', 'green', 'yellow', 'purple', 'pink']",
+                new[] { "red", "blue", "green", "yellow", "purple", "pink" })
+        };
+
+        foreach (var (text, result) in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            var expression = ExpressionsParser.Parse(text);
+
+            if (expression.Error is not null)
+                _testOutputHelper.WriteLine(expression.Error.Message);
+
+            Assert.NotNull(expression.Value);
+            Assert.Null(expression.Error);
+
+            var scopeNode = DeclarationsCollector.Collect(expression.Value);
+
+            Assert.NotNull(scopeNode);
+
+            var type = TypeResolver.Resolve(scopeNode);
+
+            if (type.IsError)
+            {
+                _testOutputHelper.WriteLine(type.Error.Message);
+                _testOutputHelper.WriteLine(type.Error.Range.ToString());
+            }
+
+            Assert.NotNull(type.Value);
+            Assert.Null(type.Error);
+
+            _testOutputHelper.WriteLine(type.ToString());
+
+            var value = ExpressionEvaluator.Evaluate(scopeNode);
+
+            Assert.NotNull(value.Value);
+            Assert.Null(value.Error);
+
+            Assert.Equivalent(result, value.Value);
+            _testOutputHelper.WriteLine(value.ToString());
+        }
+    }
+    
+    [Fact]
+    public void CanEvaluateElementAccessExpressions()
+    {
+        (string text, object result)[] texts =
+        {
+            (text: "number n = number[10][0]", result: 0.0),
+            (text: "number[] numbers = [1,2,3,4,5]", result: new[] { 1.0, 2.0, 3.0, 4.0, 5.0 }),
+            (text: "number n = [1,2,3,4,5][3]", result: 4.0),
+            (text: "number[] numbers = number[3]\n\nnumbers[0] = 1\nnumbers[1] = -2.4\nnumbers[2] = 32", result: 32.0)
         };
 
         foreach (var (text, result) in texts)

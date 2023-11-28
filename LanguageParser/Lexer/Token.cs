@@ -50,7 +50,7 @@ public sealed class Token : ISyntaxElement
 
     public bool IsNumber => Kind == SyntaxKind.NumberLiteral;
 
-    public bool IsKeyWord => Kind is >= SyntaxKind.If and <= SyntaxKind.False;
+    public bool IsKeyword => Kind is >= SyntaxKind.If and <= SyntaxKind.False;
 
     public bool IsComment => Kind == SyntaxKind.Comment;
 }

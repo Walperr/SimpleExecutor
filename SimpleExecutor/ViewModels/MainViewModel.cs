@@ -186,7 +186,6 @@ public class MainViewModel : ViewModelBase
     });
 }
 
-// setColor("Transparent")
 // jump(350,310)
 //
 // for(number i = 1; i < 1000; i++)
@@ -242,8 +241,8 @@ public class MainViewModel : ViewModelBase
 //
 // number planetWeight = 1;
 //
-// number velocityX = 0-0.25;
-// number velocityY = 0-0.1;
+// number velocityX = -0.25;
+// number velocityY = -0.1;
 //
 // // Поместили "планету" на место
 // setColor('transparent');
@@ -277,7 +276,7 @@ public class MainViewModel : ViewModelBase
 // setColor('transparent')
 // jump(getWidth() * 0.5, getHeight() * 0.5)
 //
-// for (number i = 0; i <= 500; i = i + 1)
+// for (number i = 0; i <= 500; i++)
 // {
 //     if (i % 6 == 0)
 //         setColor('yellow')

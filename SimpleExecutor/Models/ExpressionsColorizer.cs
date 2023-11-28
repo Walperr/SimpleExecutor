@@ -28,9 +28,9 @@ public sealed class ExpressionsColorizer : ExpressionVisitor
         var colorizer = new ExpressionsColorizer(changeLinePart, line);
         colorizer.Visit(expression);
 
-        foreach (var trivia in expression.TrailingTrivia) 
+        foreach (var trivia in expression.TrailingTrivia)
             colorizer.VisitTrivia(trivia);
-    } 
+    }
 
     public override void VisitTrivia(Token trivia)
     {
@@ -95,15 +95,15 @@ public sealed class ExpressionsColorizer : ExpressionVisitor
         SetForeground(expression.RepeatToken, KeywordBrush);
 
         Visit(expression.CountExpression);
-        
+
         SetForeground(expression.TimesToken, KeywordBrush);
 
         Visit(expression.Body);
     }
-    
+
     public override void VisitVariable(VariableExpression expression)
     {
-        SetForeground(expression.TypeToken, KeywordBrush);
+        Visit(expression.TypeExpression);
 
         SetForeground(expression.NameToken, GetTokenBrush(expression.NameToken));
 
@@ -143,7 +143,7 @@ public sealed class ExpressionsColorizer : ExpressionVisitor
         if (token.IsNumber)
             return NumberBrush;
 
-        if (token.IsKeyWord)
+        if (token.IsKeyword)
             return KeywordBrush;
 
         if (token.IsString)
