@@ -167,7 +167,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
                         return null;
                     }
 
-                    if (variable.Type != rightType)
+                    if (variable.Type != rightType && !variable.Type.IsAssignableTo(rightType))
                     {
                         _errors.Add(new ExpectedOtherTypeException(expression.Right, rightType, variable.Type));
                         return null;
