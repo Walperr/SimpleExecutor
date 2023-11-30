@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Globalization;
+using System.Runtime.InteropServices.JavaScript;
 using LanguageInterpreter.Common;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
@@ -333,6 +334,8 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
                 return sArrayFunction.Invoke(args!);
             case Function<bool[]> bArrayFunction:
                 return bArrayFunction.Invoke(args!);
+            case Function<Array> aFunction:
+                return aFunction.Invoke(args!);
             default:
                 _errors.Add(new InterpreterException($"Unknown return type of function {function.Name}",
                     expression.Range));

@@ -106,6 +106,7 @@ public class MainViewModel : ViewModelBase
             .WithPredefinedFunction(widthFunction)
             .WithPredefinedFunction(heightFunction)
             .WithPredefinedFunction(timeFunction)
+            .WithPredefinedFunctions(ArrayLibrary.GetFunctions())
             .WithPredefinedFunctions(MathLibrary.GetMathFunctions())
             .Build();
     }
