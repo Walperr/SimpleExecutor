@@ -5,7 +5,7 @@ namespace LanguageParser.Common;
 public sealed class ScopeNode
 {
     private readonly Dictionary<string, Variable> _variables = new (StringComparer.InvariantCultureIgnoreCase);
-    private readonly Dictionary<string, FunctionBase> _functions = new(StringComparer.InvariantCultureIgnoreCase);
+    private readonly Dictionary<string, List<FunctionBase>> _functions = new();
 
     public ScopeNode(ScopeExpression scope, ScopeNode? parent)
     {
@@ -39,16 +39,31 @@ public sealed class ScopeNode
         return _variables.TryAdd(variable.Name, variable);
     }
     
-    public FunctionBase? GetFunctionIncludingAncestors(string functionName)
+    public FunctionBase? GetFunctionIncludingAncestors(string functionName, IEnumerable<Type> parameters)
     {
-        if (!_functions.TryGetValue(functionName, out var function))
-            function = Parent?.GetFunctionIncludingAncestors(functionName);
-
-        return function;
+        return !_functions.TryGetValue(functionName, out var functions)
+            ? Parent?.GetFunctionIncludingAncestors(functionName, parameters)
+            : functions.FirstOrDefault(f => TypeEquals(f.ArgumentTypes, parameters.ToArray()));
     }
 
     public bool AddFunction(FunctionBase function)
     {
-        return _functions.TryAdd(function.Name, function);
+        if (!_functions.TryGetValue(function.Name, out var functions))
+            _functions[function.Name] = functions = new List<FunctionBase>();
+
+        if (functions.Any(f => TypeEquals(f.ArgumentTypes, function.ArgumentTypes)))
+            return false;
+        
+        functions.Add(function);
+        
+        return true;
+    }
+
+    private static bool TypeEquals(Type[] a, Type[] b)
+    {
+        if (a.Length != b.Length)
+            return false;
+
+        return !a.Where((t, i) => !b[i].IsAssignableTo(t)).Any();
     }
 }

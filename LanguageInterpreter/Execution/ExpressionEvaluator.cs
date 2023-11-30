@@ -288,7 +288,22 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
             return null;
         }
 
-        var function = GetFunction(expression, constant.Lexeme);
+        var argumentTypes = new List<Type>();
+
+        foreach (var argument in expression.Arguments)
+        {
+            var result = TypeResolver.Resolve(_rootScope, argument, token);
+
+            if (result.IsError)
+            {
+                _errors.Add(result.Error);
+                return null;
+            }
+
+            argumentTypes.Add(result.Value);
+        }
+
+        var function = GetFunction(expression, constant.Lexeme, argumentTypes);
 
         if (function is null)
         {
@@ -663,13 +678,13 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
         return variable;
     }
 
-    private FunctionBase? GetFunction(ExpressionBase expression, string name)
+    private FunctionBase? GetFunction(ExpressionBase expression, string name, IEnumerable<Type> parameters)
     {
         var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
 
         var node = _rootScope.FindDescendant(node => node.Scope == scope);
 
-        var function = node?.GetFunctionIncludingAncestors(name);
+        var function = node?.GetFunctionIncludingAncestors(name, parameters);
 
         return function;
     }
