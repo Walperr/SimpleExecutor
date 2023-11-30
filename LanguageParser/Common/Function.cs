@@ -13,17 +13,25 @@ public abstract class FunctionBase
     public abstract Type ReturnType { get; }
 
     public Type[] ArgumentTypes { get; protected set; }
+
+    public static FunctionBase Create(string name, Action<IList<object>> body, params Type[] parameterTypes)
+    {
+        return new Function(name, parameterTypes.Select((t, i) => new Variable($"arg_{i}", t)), body);
+    }
+    
+    public static FunctionBase Create<T>(string name, Func<IList<object>, T> body, params Type[] parameterTypes)
+    {
+        return new Function<T>(name, parameterTypes.Select((t, i) => new Variable($"arg_{i}", t)), body);
+    }
 }
 
 public sealed class Function<T> : FunctionBase
 {
     private readonly Func<IList<object>, T> _body;
-    public IEnumerable<Variable> Arguments { get; }
 
-    public Function(string name, Variable[] arguments, Func<IList<object>,T> body)  : base(name, arguments.Select(o => o.Type))
+    public Function(string name, IEnumerable<Variable> arguments, Func<IList<object>,T> body)  : base(name, arguments.Select(o => o.Type))
     {
         _body = body;
-        Arguments = arguments;
     }
 
     public override Type ReturnType => typeof(T);

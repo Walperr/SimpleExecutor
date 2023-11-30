@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using LanguageInterpreter;
 using LanguageParser.Common;
 using ReactiveUI;
+using SimpleExecutor.Libraries;
 using SimpleExecutor.Models;
 
 namespace SimpleExecutor.ViewModels;
@@ -26,16 +27,6 @@ public class MainViewModel : ViewModelBase
 
         var printLineFunction = new Function("printLine", new[] { new Variable("text", typeof(object)) },
             args => Output += "\n" + args[0]);
-
-        var sqrtFunction = new Function<double>("sqrt", new[] { new Variable("d", typeof(double)) },
-            args => Math.Sqrt((double)args[0]));
-
-        var powFunction = new Function<double>("pow",
-            new[] { new Variable("x", typeof(double)), new Variable("y", typeof(double)) },
-            args => Math.Pow((double)args[0], (double)args[1]));
-        
-        var absFunction = new Function<double>("abs", new[] { new Variable("d", typeof(double)) },
-            args => Math.Abs((double)args[0]));
 
         var moveFunction = new Function("move", new[] { new Variable("length", typeof(double)) },
             args =>
@@ -72,7 +63,7 @@ public class MainViewModel : ViewModelBase
 
         var timeFunction =
             new Function<double>("getTime", Array.Empty<Variable>(), args => DateTime.UtcNow.Millisecond);
-        
+
         var delayFunction = new Function("delay", new[] { new Variable("milliseconds", typeof(double)) }, args =>
         {
             var time = (double)args[0];
@@ -87,15 +78,16 @@ public class MainViewModel : ViewModelBase
         {
             var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
 
-            Dispatcher.UIThread.Invoke(() => Executor.TraceColor = (IImmutableSolidColorBrush) brush.ToImmutable());
+            Dispatcher.UIThread.Invoke(() => Executor.TraceColor = (IImmutableSolidColorBrush)brush.ToImmutable());
         });
 
-        var setBackgroundFunction = new Function("setBackground", new[] {new Variable("color", typeof(string))}, args =>
-        {
-            var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
+        var setBackgroundFunction = new Function("setBackground", new[] { new Variable("color", typeof(string)) },
+            args =>
+            {
+                var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
 
-            Dispatcher.UIThread.Invoke(() => Executor.Background = (IImmutableSolidColorBrush) brush.ToImmutable());
-        });
+                Dispatcher.UIThread.Invoke(() => Executor.Background = (IImmutableSolidColorBrush)brush.ToImmutable());
+            });
 
         TokensSyntaxColorizer = new TokensSyntaxColorizer(this);
         ExpressionSyntaxColorizer = new ExpressionSyntaxColorizer(this);
@@ -103,8 +95,6 @@ public class MainViewModel : ViewModelBase
         Interpreter = InterpreterBuilder.CreateBuilder()
             .WithPredefinedFunction(printFunction)
             .WithPredefinedFunction(printLineFunction)
-            .WithPredefinedFunction(sqrtFunction)
-            .WithPredefinedFunction(absFunction)
             .WithPredefinedFunction(moveFunction)
             .WithPredefinedFunction(rotateFunction)
             .WithPredefinedFunction(resetFunction)
@@ -116,7 +106,7 @@ public class MainViewModel : ViewModelBase
             .WithPredefinedFunction(widthFunction)
             .WithPredefinedFunction(heightFunction)
             .WithPredefinedFunction(timeFunction)
-            .WithPredefinedFunction(powFunction)
+            .WithPredefinedFunctions(MathLibrary.GetMathFunctions())
             .Build();
     }
 
@@ -158,7 +148,7 @@ public class MainViewModel : ViewModelBase
                 lock (cancellation)
                 {
                     Interpreter.Initialize(Code);
-                    
+
                     if (!Interpreter.HasErrors)
                         return Interpreter.Interpret(token);
 
