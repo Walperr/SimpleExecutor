@@ -993,4 +993,51 @@ public class UnitTest1
             _testOutputHelper.WriteLine(value.ToString());
         }
     }
+
+    [Fact]
+    public void CanInvokeOverloadedFunctions()
+    {
+        var foo = new Function("foo", Enumerable.Empty<Variable>(),
+            args => _testOutputHelper.WriteLine("Invoked foo without args"));
+
+        var fooOverloadNumber = new Function("foo", new[] { new Variable("a", typeof(double)) },
+            arg => _testOutputHelper.WriteLine($"Invoked foo with argument {arg[0]}"));
+
+        var fooOverloadString = new Function<string>("foo", new[] { new Variable("a", typeof(string)) },
+            arg =>
+            {
+                _testOutputHelper.WriteLine($"Invoked foo with argument {arg[0]}. Returns string");
+
+                return arg[0].ToString() ?? string.Empty;
+            });
+
+        var fooOverloadObject = new Function("foo", new[] { new Variable("a", typeof(object)) },
+            arg => _testOutputHelper.WriteLine($"Invoked foo with object argument {arg[0]}"));
+
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .WithPredefinedFunction(foo)
+            .WithPredefinedFunction(fooOverloadNumber)
+            .WithPredefinedFunction(fooOverloadString)
+            .WithPredefinedFunction(fooOverloadObject)
+            .Build();
+
+        Assert.NotNull(interpreter);
+
+        const string text = "foo()\n foo(2) \n foo('Hello, world') \n foo(foo('foo inside foo')) \n foo(false)";
+
+        _testOutputHelper.WriteLine(text);
+        _testOutputHelper.WriteLine("\nresult:\n");
+
+        interpreter.Initialize(text);
+
+        if (interpreter.HasErrors)
+            _testOutputHelper.WriteLine(interpreter.Error.Message);
+
+        Assert.False(interpreter.HasErrors);
+
+        var result = interpreter.Interpret(CancellationToken.None);
+
+        Assert.NotNull(result.Value);
+        Assert.Null(result.Error);
+    }
 }

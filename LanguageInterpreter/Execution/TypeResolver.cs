@@ -176,7 +176,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
                     return variable.Type;
                 }
 
-                if (expression.Left is ElementAccessExpression {IsElementAccessor: true, Elements.Length: 1} indexerExpression)
+                if (expression.Left is ElementAccessExpression { IsElementAccessor: true, Elements.Length: 1 })
                 {
                     if (leftType == rightType)
                         return leftType;
@@ -272,29 +272,25 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        var function = GetFunction(expression, constant.Lexeme);
+        var argTypes = new List<Type>();
 
-        if (function is null)
+        foreach (var argument in expression.Arguments)
         {
-            _errors.Add(new UndeclaredFunctionException(constant.Lexeme, constant.Range));
-            return null;
-        }
+            var type = Visit(argument, token);
 
-        for (var i = 0; i < function.ArgumentTypes.Length; i++)
-        {
-            var argType = Visit(expression.Arguments[i], token);
-
-            if (argType is null)
+            if (type is null)
                 return null;
 
-            if (!argType.IsAssignableTo(function.ArgumentTypes[i]))
-            {
-                _errors.Add(new WrongFunctionArgumentException(argType, function.Name, expression.Arguments[i].Range));
-                return null;
-            }
+            argTypes.Add(type);
         }
 
-        return function.ReturnType;
+        var function = GetFunction(expression, constant.Lexeme, argTypes);
+
+        if (function is not null)
+            return function.ReturnType;
+
+        _errors.Add(new UndeclaredFunctionException(constant.Lexeme, constant.Range));
+        return null;
     }
 
     public override Type? VisitParenthesized(ParenthesizedExpression expression, CancellationToken token)
@@ -549,13 +545,13 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         return variable;
     }
 
-    private FunctionBase? GetFunction(ExpressionBase expression, string name)
+    private FunctionBase? GetFunction(ExpressionBase expression, string name, IEnumerable<Type> parameters)
     {
         var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
 
         var node = _rootScope.FindDescendant(node => node.Scope == scope);
 
-        var function = node?.GetFunctionIncludingAncestors(name);
+        var function = node?.GetFunctionIncludingAncestors(name, parameters);
 
         return function;
     }

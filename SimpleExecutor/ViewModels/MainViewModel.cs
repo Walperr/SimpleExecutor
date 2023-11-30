@@ -30,6 +30,10 @@ public class MainViewModel : ViewModelBase
         var sqrtFunction = new Function<double>("sqrt", new[] { new Variable("d", typeof(double)) },
             args => Math.Sqrt((double)args[0]));
 
+        var powFunction = new Function<double>("pow",
+            new[] { new Variable("x", typeof(double)), new Variable("y", typeof(double)) },
+            args => Math.Pow((double)args[0], (double)args[1]));
+        
         var absFunction = new Function<double>("abs", new[] { new Variable("d", typeof(double)) },
             args => Math.Abs((double)args[0]));
 
@@ -112,6 +116,7 @@ public class MainViewModel : ViewModelBase
             .WithPredefinedFunction(widthFunction)
             .WithPredefinedFunction(heightFunction)
             .WithPredefinedFunction(timeFunction)
+            .WithPredefinedFunction(powFunction)
             .Build();
     }
 
