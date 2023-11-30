@@ -1040,4 +1040,41 @@ public class UnitTest1
         Assert.NotNull(result.Value);
         Assert.Null(result.Error);
     }
+
+    [Fact]
+    public void CanInvokeFunctionWithArrayParameter()
+    {
+        var lengthFunction = new Function<double>("length", new[] { new Variable("array", typeof(Array)) }, args => ((Array)args[0]).Length);
+
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .WithPredefinedFunction(lengthFunction)
+            .Build();
+        
+        Assert.NotNull(interpreter);
+        
+        (string text, object result)[] texts =
+        {
+            (text: "length(number[10])", result: 10.0),
+            (text: "length(['12', 'ssf', 'ggeer'])", result: 3.0),
+            (text: "bool[] array = bool[213]\nlength(array)", result: 213.0)
+        };
+
+        foreach (var (text, result) in texts)
+        {
+            _testOutputHelper.WriteLine(text);
+
+            interpreter.Initialize(text);
+
+            if (interpreter.HasErrors)
+                _testOutputHelper.WriteLine(interpreter.Error.Message);
+
+            Assert.False(interpreter.HasErrors);
+
+            var r = interpreter.Interpret(CancellationToken.None);
+
+            Assert.NotNull(r.Value);
+            Assert.Null(r.Error);
+            Assert.Equivalent(result, r.Value);
+        }
+    }
 }

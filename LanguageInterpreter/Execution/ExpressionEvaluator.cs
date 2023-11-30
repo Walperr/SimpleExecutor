@@ -327,6 +327,12 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
                 return bFunction.Invoke(args!);
             case Function<double> dFunction:
                 return dFunction.Invoke(args!);
+            case Function<double[]> dArrayFunction:
+                return dArrayFunction.Invoke(args!);
+            case Function<string[]> sArrayFunction:
+                return sArrayFunction.Invoke(args!);
+            case Function<bool[]> bArrayFunction:
+                return bArrayFunction.Invoke(args!);
             default:
                 _errors.Add(new InterpreterException($"Unknown return type of function {function.Name}",
                     expression.Range));
