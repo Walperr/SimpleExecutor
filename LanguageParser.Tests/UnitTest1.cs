@@ -174,6 +174,7 @@ public class UnitTest1
         var texts = new[]
         {
             "for (;;) {}", "for (number i = 0; i <= 20; i = i + 1) callFunc()", "for (; true; step()) {}",
+            "for string i in [1,2,3] {}", "for number i = 0 to 100 {}", "for number i = 100 down to 10 {}",
             "for (;;) {};", "for (number i = 0; i <= 20; i = i + 1) callFunc();", "for (; true; step()) {};"
         };
 
@@ -749,6 +750,38 @@ public class UnitTest1
 
         const string text =
             "print(\"start\")\n\nnumber someNumber = 6\n\nfor (number i = 0; i < someNumber; i = i + 1)\n    print(\"current i = \" + i)\n\nnumber i = 0\n\nwhile (i > someNumber / 2)\n{\n    print(i + \": PI still equals \" + PI)\n\n    i = i - 1\n}\n\nnumber j = 0\n\nrepeat 5 times\n{\n    print(\"Repeat print E\")\n    print(E)\n}\nprint(\"done\")";
+
+        _testOutputHelper.WriteLine(text);
+        _testOutputHelper.WriteLine("\nresult:\n");
+
+        interpreter.Initialize(text);
+
+        if (interpreter.HasErrors)
+            _testOutputHelper.WriteLine(interpreter.Error.Message);
+
+        Assert.False(interpreter.HasErrors);
+
+        var result = interpreter.Interpret(CancellationToken.None);
+
+        Assert.NotNull(result.Value);
+        Assert.Null(result.Error);
+    }
+    
+    [Fact]
+    public void CanEvaluateForLoops()
+    {
+        var printFunction = new Function("print",
+            new[] { new Variable("text", typeof(object)) },
+            args => _testOutputHelper.WriteLine(args.First().ToString()));
+
+        var interpreter = InterpreterBuilder.CreateBuilder()
+            .WithPredefinedFunction(printFunction)
+            .Build();
+
+        Assert.NotNull(interpreter);
+
+        const string text =
+            "for number i = 0 to 10 print(i) for number i = 10 down to 1 print(i) for string s in ['hello', 'hi', 'world', 'some string'] print(s) for number i in [2, 3, 6, 7] print(i) for bool b in [true, false, true, true, false, false] print(b)";
 
         _testOutputHelper.WriteLine(text);
         _testOutputHelper.WriteLine("\nresult:\n");

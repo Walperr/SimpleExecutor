@@ -124,6 +124,18 @@ public enum SyntaxKind
     /// </summary>
     For,
     /// <summary>
+    /// to keyword
+    /// </summary>
+    To,
+    /// <summary>
+    /// down keyword
+    /// </summary>
+    Down,
+    /// <summary>
+    /// in keyword
+    /// </summary>
+    In,
+    /// <summary>
     /// while keyword
     /// </summary>
     While,
@@ -264,13 +276,21 @@ public enum SyntaxKind
     /// </summary>
     WhileExpression,
     /// <summary>
-    /// repeat expression until (b)
+    /// repeat n times expression
     /// </summary>
     RepeatExpression,
     /// <summary>
     /// for (a; b; c) expression
     /// </summary>
     ForExpression,
+    /// <summary>
+    /// for i in array expression
+    /// </summary>
+    ForInExpression,
+    /// <summary>
+    /// for i = a to b expression
+    /// </summary>
+    ForToExpression,
     /// <summary>
     /// { expression; expression; ... }
     /// </summary>

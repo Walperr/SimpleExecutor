@@ -254,6 +254,103 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
         }
     }
 
+    public override object? VisitForTo(ForToExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var varValue = Visit(expression.Variable, token);
+
+        if (varValue is null)
+            return null;
+        
+        var countValue = Visit(expression.Count, token);
+
+        if (countValue is null)
+            return null;
+
+        var variable = GetVariable(expression, expression.Variable.NameToken.Lexeme);
+        
+        if (variable is null || !variable.IsDeclared)
+        {
+            _errors.Add(new UndeclaredVariableException(expression.Variable.NameToken.Lexeme, expression.Range));
+            return null;
+        }
+        
+        var end = (double) countValue;
+
+        object value = Empty.Instance;
+
+        Func<bool> predicate = expression.DownToken is null
+            ? () => (double) variable.Value! < end
+            : () => (double) variable.Value! >= end;
+
+        while (predicate())
+        {
+            var result = Visit(expression.Body, token);
+
+            if (result is null)
+                return null;
+
+            value = result;
+            
+            if (expression.DownToken is null)
+                variable.SetValue((double) variable.Value! + 1);
+            else
+                variable.SetValue((double) variable.Value! - 1);
+        }
+
+        return value;
+    }
+
+    public override object? VisitForIn(ForInExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var varValue = Visit(expression.Variable, token);
+
+        if (varValue is null)
+            return null;
+
+        var arrayValue = Visit(expression.Collection, token);
+
+        if (arrayValue is null)
+            return null;
+
+        var array = (Array) arrayValue;
+        
+        var variable = GetVariable(expression, expression.Variable.NameToken.Lexeme);
+        
+        if (variable is null || !variable.IsDeclared)
+        {
+            _errors.Add(new UndeclaredVariableException(expression.Variable.NameToken.Lexeme, expression.Range));
+            return null;
+        }
+
+        object value = Empty.Instance;
+
+        foreach (var element in array)
+        {
+            variable.SetValue(element);
+
+            var result = Visit(expression.Body, token);
+
+            if (result is null)
+                return null;
+
+            value = result;
+        }
+
+        return value;
+    }
+
     public override object? VisitIf(IfExpression expression, CancellationToken token)
     {
         if (token.IsCancellationRequested)
