@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Skia;
-using DynamicData;
 using ReactiveUI;
 using SimpleExecutor.ViewModels;
 using SkiaSharp;
@@ -97,10 +96,8 @@ public sealed class Executor : ViewModelBase
 
             _polygon.Points.Add(current.ToSKPoint());
         }
-        else
-        {
-            _shapes.Add(new Line(previous.ToSKPoint(), current.ToSKPoint(), LineColor, Thickness));
-        }
+
+        _shapes.Add(new Line(previous.ToSKPoint(), current.ToSKPoint(), LineColor, Thickness));
     }
 
     public void Rotate(double angle)

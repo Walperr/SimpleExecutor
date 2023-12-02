@@ -70,30 +70,17 @@ public partial class ExecutorView : UserControl
                     paint.Color = line.Color;
                     canvas.DrawLine(line.Start, line.End, paint);
                     break;
-                case Polygon polygon:
-                    var path = new SKPath();
-                    var fill = polygon.IsCompleted ? new SKPath() : null;
-                    
-                    path.MoveTo(polygon.Points[0]);
-                    fill?.MoveTo(polygon.Points[0]);
+                case Polygon {IsCompleted: true} polygon:
+                    var fill = new SKPath();
+                    fill.MoveTo(polygon.Points[0]);
 
-                    foreach (var point in polygon.Points.Skip(1))
-                    {
-                        path.LineTo(point);
-                        fill?.LineTo(point);
-                    }
+                    foreach (var point in polygon.Points.Skip(1)) 
+                        fill.LineTo(point);
 
-                    if (fill is not null)
-                    {
-                        paint.Style = SKPaintStyle.Fill;
-                        paint.StrokeWidth = 1;
-                        paint.Color = polygon.FillColor;
-                        canvas.DrawPath(fill, paint);
-                    }
-                    paint.Style = SKPaintStyle.Stroke;
+                    paint.Style = SKPaintStyle.Fill;
                     paint.StrokeWidth = polygon.Thickness;
-                    paint.Color = polygon.Color;
-                    canvas.DrawPath(path, paint);
+                    paint.Color = polygon.FillColor;
+                    canvas.DrawPath(fill, paint);
                     break;
             }
 

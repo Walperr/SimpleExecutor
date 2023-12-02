@@ -12,7 +12,7 @@ public sealed class TurtleLibrary
 {
     private readonly Dispatcher _dispatcher = Dispatcher.UIThread;
     private readonly Executor _turtle;
-    private int _delay = 100;
+    public int Delay { get; private set; } = 100;
 
     public TurtleLibrary(Executor turtle)
     {
@@ -49,19 +49,19 @@ public sealed class TurtleLibrary
         yield return FunctionBase.Create("move", args =>
         {
             _dispatcher.Invoke(() => _turtle.Move((double) args[0]));
-            Task.Delay(_delay).Wait();
+            Task.Delay(Delay).Wait();
         }, typeof(double));
 
         yield return FunctionBase.Create("moveTo", args =>
         {
             _dispatcher.Invoke(() => _turtle.MoveTo((double) args[0], (double) args[1]));
-            Task.Delay(_delay).Wait();
+            Task.Delay(Delay).Wait();
         }, typeof(double), typeof(double));
 
         yield return FunctionBase.Create("jump", args =>
         {
             _dispatcher.Invoke(() => _turtle.Jump((double) args[0], (double) args[1]));
-            Task.Delay(_delay).Wait();
+            Task.Delay(Delay).Wait();
         }, typeof(double), typeof(double));
 
         yield return FunctionBase.Create("reset", _ => _dispatcher.Invoke(() => _turtle.Reset()));
@@ -69,13 +69,13 @@ public sealed class TurtleLibrary
         yield return FunctionBase.Create("rotate", args =>
             {
                 _dispatcher.Invoke(() => _turtle.Rotate((double) args[0]));
-                Task.Delay(_delay).Wait();
+                Task.Delay(Delay).Wait();
             },
             typeof(double));
 
         yield return FunctionBase.Create("setStep", args =>
         {
-            _delay = (int) (double) args[0];
+            Delay = (int) (double) args[0];
         }, typeof(double));
 
         yield return FunctionBase.Create("getWidth", _ => _turtle.PixelWidth);
