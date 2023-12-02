@@ -2,8 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia.Media;
-using Avalonia.Threading;
 using LanguageInterpreter;
 using LanguageParser.Common;
 using ReactiveUI;
@@ -22,72 +20,19 @@ public class MainViewModel : ViewModelBase
 
     public MainViewModel()
     {
-        var printFunction = new Function("print", new[] { new Variable("text", typeof(object)) },
+        var printFunction = new Function("print", new[] {new Variable("text", typeof(object))},
             args => Output += args[0].ToString());
 
-        var printLineFunction = new Function("printLine", new[] { new Variable("text", typeof(object)) },
+        var printLineFunction = new Function("printLine", new[] {new Variable("text", typeof(object))},
             args => Output += "\n" + args[0]);
 
-        var moveFunction = new Function("move", new[] { new Variable("length", typeof(double)) },
-            args =>
-            {
-                Dispatcher.UIThread.Invoke(() => Executor.Move((double)args[0]));
-                Task.Delay(StepDuration).Wait();
-            });
-
-        var rotateFunction = new Function("rotate", new[] { new Variable("angle", typeof(double)) },
-            args =>
-            {
-                Dispatcher.UIThread.Invoke(() => Executor.Rotate((double)args[0]));
-                Task.Delay(StepDuration).Wait();
-            });
-
-        var resetFunction = new Function("reset", Array.Empty<Variable>(),
-            _ =>
-            {
-                Dispatcher.UIThread.Invoke(() => Executor.Reset());
-                Task.Delay(StepDuration).Wait();
-            });
-
-        var jumpFunction = new Function("jump",
-            new[] { new Variable("x", typeof(double)), new Variable("y", typeof(double)) },
-            args =>
-            {
-                Dispatcher.UIThread.Invoke(() => Executor.Jump((double)args[0], (double)args[1]));
-                Task.Delay(StepDuration).Wait();
-            });
-
-        var widthFunction = new Function<double>("getWidth", Array.Empty<Variable>(), args => Executor.PixelWidth);
-
-        var heightFunction = new Function<double>("getHeight", Array.Empty<Variable>(), args => Executor.PixelHeight);
-
-        var timeFunction =
-            new Function<double>("getTime", Array.Empty<Variable>(), args => DateTime.UtcNow.Millisecond);
-
-        var delayFunction = new Function("delay", new[] { new Variable("milliseconds", typeof(double)) }, args =>
+        var delayFunction = new Function("delay", new[] {new Variable("milliseconds", typeof(double))}, args =>
         {
-            var time = (double)args[0];
-            Task.Delay((int)time).Wait();
+            var time = (double) args[0];
+            Task.Delay((int) time).Wait();
         });
 
-        var setStepFunction = new Function("setStep",
-            new[] { new Variable("milliseconds", typeof(double)) },
-            args => { StepDuration = (int)(double)args[0]; });
-
-        var setColorFunction = new Function("setColor", new[] { new Variable("color", typeof(string)) }, args =>
-        {
-            var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
-
-            Dispatcher.UIThread.Invoke(() => Executor.TraceColor = (IImmutableSolidColorBrush)brush.ToImmutable());
-        });
-
-        var setBackgroundFunction = new Function("setBackground", new[] { new Variable("color", typeof(string)) },
-            args =>
-            {
-                var brush = (ISolidColorBrush)Brush.Parse((string)args[0]);
-
-                Dispatcher.UIThread.Invoke(() => Executor.Background = (IImmutableSolidColorBrush)brush.ToImmutable());
-            });
+        var turtle = new TurtleLibrary(Executor);
 
         TokensSyntaxColorizer = new TokensSyntaxColorizer(this);
         ExpressionSyntaxColorizer = new ExpressionSyntaxColorizer(this);
@@ -95,25 +40,14 @@ public class MainViewModel : ViewModelBase
         Interpreter = InterpreterBuilder.CreateBuilder()
             .WithPredefinedFunction(printFunction)
             .WithPredefinedFunction(printLineFunction)
-            .WithPredefinedFunction(moveFunction)
-            .WithPredefinedFunction(rotateFunction)
-            .WithPredefinedFunction(resetFunction)
-            .WithPredefinedFunction(jumpFunction)
             .WithPredefinedFunction(delayFunction)
-            .WithPredefinedFunction(setStepFunction)
-            .WithPredefinedFunction(setColorFunction)
-            .WithPredefinedFunction(setBackgroundFunction)
-            .WithPredefinedFunction(widthFunction)
-            .WithPredefinedFunction(heightFunction)
-            .WithPredefinedFunction(timeFunction)
             .WithPredefinedFunctions(ArrayLibrary.GetFunctions())
             .WithPredefinedFunctions(MathLibrary.GetMathFunctions())
+            .WithPredefinedFunctions(turtle.GetFunctions())
             .Build();
     }
 
-    public IInterpreter Interpreter { get; }
-
-    private int StepDuration { get; set; } = 100;
+    private IInterpreter Interpreter { get; }
 
     public Executor Executor { get; } = new();
 

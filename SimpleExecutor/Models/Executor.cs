@@ -1,20 +1,29 @@
 using System;
 using System.Collections.Generic;
 using Avalonia;
-using Avalonia.Media;
+using Avalonia.Skia;
+using DynamicData;
 using ReactiveUI;
 using SimpleExecutor.ViewModels;
+using SkiaSharp;
 
 namespace SimpleExecutor.Models;
 
 public sealed class Executor : ViewModelBase
 {
+    private readonly List<Shape> _shapes = new();
     private double _angle;
+    private SKColor _background = SKColors.White;
     private double _pixelHeight;
     private double _pixelWidth;
+    private Polygon? _polygon;
     private Point _position;
-    private IImmutableSolidColorBrush _background = Brushes.White;
-    public List<(Point point, IImmutableSolidColorBrush brush)> Trace { get; } = new();
+    private int _thickness = 2;
+
+    public SKColor LineColor { get; set; } = SKColors.Blue;
+    public SKColor FillColor { get; set; } = SKColors.Blue;
+
+    public IReadOnlyList<Shape> Shapes => _shapes;
 
     public double PixelWidth
     {
@@ -28,18 +37,16 @@ public sealed class Executor : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _pixelHeight, value);
     }
 
-    public IImmutableSolidColorBrush Background
+    public SKColor Background
     {
         get => _background;
         set => this.RaiseAndSetIfChanged(ref _background, value);
     }
 
-    public IImmutableSolidColorBrush TraceColor { get; set; } = Brushes.Blue;
-
     public Point Position
     {
         get => _position;
-        set => this.RaiseAndSetIfChanged(ref _position, value);
+        private set => this.RaiseAndSetIfChanged(ref _position, value);
     }
 
     public double Angle
@@ -48,13 +55,52 @@ public sealed class Executor : ViewModelBase
         private set => this.RaiseAndSetIfChanged(ref _angle, value);
     }
 
+    public int Thickness
+    {
+        get => _thickness;
+        set => this.RaiseAndSetIfChanged(ref _thickness, value);
+    }
+
+    public void BeginPolygon()
+    {
+        _polygon ??= new Polygon(FillColor, LineColor, Thickness);
+
+        _shapes.Add(_polygon);
+    }
+
+    public void CompletePolygon()
+    {
+        if (_polygon is null)
+            throw new InvalidOperationException("Cannot complete polygon. No polygons started");
+
+        _polygon.Complete();
+        _polygon = null;
+    }
+
     public void Move(double length)
     {
         var direction = new Vector(-Math.Sin(Angle * Math.PI / 180), Math.Cos(Angle * Math.PI / 180));
 
+        var prevPos = Position;
+
         Position += direction * length;
-        
-        Trace.Add((new Point(Position.X, Position.Y), TraceColor));
+
+        DrawTrace(prevPos, Position);
+    }
+
+    private void DrawTrace(Point previous, Point current)
+    {
+        if (_polygon is not null)
+        {
+            if (_polygon.Points.Count == 0)
+                _polygon.Points.Add(previous.ToSKPoint());
+
+            _polygon.Points.Add(current.ToSKPoint());
+        }
+        else
+        {
+            _shapes.Add(new Line(previous.ToSKPoint(), current.ToSKPoint(), LineColor, Thickness));
+        }
     }
 
     public void Rotate(double angle)
@@ -66,7 +112,10 @@ public sealed class Executor : ViewModelBase
 
     public void Reset()
     {
-        Trace.Clear();
+        _shapes.Clear();
+        Background = SKColors.White;
+        FillColor = SKColors.Blue;
+        LineColor = SKColors.Blue;
         Position = default;
         Angle = 0;
     }
@@ -74,7 +123,14 @@ public sealed class Executor : ViewModelBase
     public void Jump(double x, double y)
     {
         Position = new Point(x, y);
-        
-        Trace.Add((new Point(Position.X, Position.Y), Brushes.Transparent));
+    }
+
+    public void MoveTo(double x, double y)
+    {
+        var prevPos = Position;
+
+        Position = new Point(x, y);
+
+        DrawTrace(prevPos, Position);
     }
 }

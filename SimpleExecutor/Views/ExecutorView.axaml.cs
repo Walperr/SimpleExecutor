@@ -1,12 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Skia;
-using Avalonia.Threading;
 using SimpleExecutor.Models;
 using SkiaSharp;
 
@@ -61,38 +58,60 @@ public partial class ExecutorView : UserControl
 
         using var paint = new SKPaint();
 
-        paint.Color = _executor.Background.Color.ToSKColor();
-
+        paint.Color = _executor.Background;
         canvas.DrawRect(Bounds.ToSKRect(), paint);
-        
         paint.IsAntialias = true;
-        
-        paint.StrokeWidth = 2;
-        paint.PathEffect = SKPathEffect.CreateDash(Array.Empty<float>(), 0);
-        paint.Color = _executor.TraceColor.Color.ToSKColor();
-        paint.Style = SKPaintStyle.Stroke;
 
-        var trace = _executor.Trace;
-        
-        for (var i = 1; i < trace.Count; i++)
-        {
-            paint.Color = trace[i].brush.Color.ToSKColor();
-            canvas.DrawLine(trace[i - 1].point.ToSKPoint(), trace[i].point.ToSKPoint(), paint);
-        }
-        
+        foreach (var shape in _executor.Shapes)
+            switch (shape)
+            {
+                case Line line:
+                    paint.StrokeWidth = line.Thickness;
+                    paint.Color = line.Color;
+                    canvas.DrawLine(line.Start, line.End, paint);
+                    break;
+                case Polygon polygon:
+                    var path = new SKPath();
+                    var fill = polygon.IsCompleted ? new SKPath() : null;
+                    
+                    path.MoveTo(polygon.Points[0]);
+                    fill?.MoveTo(polygon.Points[0]);
+
+                    foreach (var point in polygon.Points.Skip(1))
+                    {
+                        path.LineTo(point);
+                        fill?.LineTo(point);
+                    }
+
+                    if (fill is not null)
+                    {
+                        paint.Style = SKPaintStyle.Fill;
+                        paint.StrokeWidth = 1;
+                        paint.Color = polygon.FillColor;
+                        canvas.DrawPath(fill, paint);
+                    }
+                    paint.Style = SKPaintStyle.Stroke;
+                    paint.StrokeWidth = polygon.Thickness;
+                    paint.Color = polygon.Color;
+                    canvas.DrawPath(path, paint);
+                    break;
+            }
+
+        // draw turtle
+
         paint.Style = SKPaintStyle.StrokeAndFill;
         paint.Color = SKColors.Red;
 
-        canvas.RotateDegrees((float)_executor.Angle, (float)_executor.Position.X, (float)_executor.Position.Y);
-        
-        canvas.DrawRect((float)_executor.Position.X - 5, (float)_executor.Position.Y - 5, 10, 10, paint);
-        
+        canvas.RotateDegrees((float) _executor.Angle, (float) _executor.Position.X, (float) _executor.Position.Y);
+
+        canvas.DrawRect((float) _executor.Position.X - 5, (float) _executor.Position.Y - 5, 10, 10, paint);
+
         paint.Color = SKColors.Green;
-        canvas.DrawCircle((float)_executor.Position.X, (float)_executor.Position.Y + 5, 2, paint);
-        
-        canvas.RotateDegrees(-(float)_executor.Angle, (float)_executor.Position.X, (float)_executor.Position.Y);
+        canvas.DrawCircle((float) _executor.Position.X, (float) _executor.Position.Y + 5, 2, paint);
+
+        canvas.RotateDegrees(-(float) _executor.Angle, (float) _executor.Position.X, (float) _executor.Position.Y);
     }
-    
+
     public override void Render(DrawingContext context)
     {
         _drawOperation.Bounds = Bounds;
