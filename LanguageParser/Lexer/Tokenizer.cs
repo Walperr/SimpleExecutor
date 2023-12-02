@@ -90,6 +90,9 @@ public sealed class Tokenizer
             "times" => new Token(SyntaxKind.Times, token.Lexeme, token.Range.Start),
             "while" => new Token(SyntaxKind.While, token.Lexeme, token.Range.Start),
             "for" => new Token(SyntaxKind.For, token.Lexeme, token.Range.Start),
+            "to" => new Token(SyntaxKind.To, token.Lexeme, token.Range.Start),
+            "down" => new Token(SyntaxKind.Down, token.Lexeme, token.Range.Start),
+            "in" => new Token(SyntaxKind.In, token.Lexeme, token.Range.Start),
             "number" => new Token(SyntaxKind.Number, token.Lexeme, token.Range.Start),
             "string" => new Token(SyntaxKind.String, token.Lexeme, token.Range.Start),
             "bool" => new Token(SyntaxKind.Bool, token.Lexeme, token.Range.Start),
@@ -304,7 +307,7 @@ public sealed class Tokenizer
         return c is '\r' or '\n';
     }
 
-    public IEnumerable<Token> ReadAll()
+    private IEnumerable<Token> ReadAll()
     {
         while (_charStream.Current != '\0')
         {

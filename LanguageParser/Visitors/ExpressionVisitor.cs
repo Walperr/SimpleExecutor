@@ -26,6 +26,14 @@ public abstract class ExpressionVisitor
     {
     }
 
+    public virtual void VisitForTo(ForToExpression expression)
+    {
+    }
+
+    public virtual void VisitForIn(ForInExpression expression)
+    {
+    }
+    
     public virtual void VisitIf(IfExpression expression)
     {
     }
@@ -83,6 +91,10 @@ public abstract class ExpressionVisitor<T, TState>
     public abstract T VisitConstant(ConstantExpression expression, TState state);
 
     public abstract T VisitFor(ForExpression expression, TState state);
+
+    public abstract T VisitForTo(ForToExpression expression, TState state);
+
+    public abstract T VisitForIn(ForInExpression expression, TState state);
 
     public abstract T VisitIf(IfExpression expression, TState state);
 

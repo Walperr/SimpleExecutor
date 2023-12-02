@@ -218,6 +218,83 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         return Visit(expression.Body, token);
     }
 
+    public override Type? VisitForTo(ForToExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var varType = Visit(expression.Variable, token);
+
+        if (varType is null)
+            return null;
+
+        if (varType != typeof(double))
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Variable, varType, typeof(double)));
+            return null;
+        }
+
+        var countType = Visit(expression.Count, token);
+
+        if (countType is null)
+            return null;
+
+        if (countType != typeof(double))
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Count, varType, typeof(double)));
+            return null;
+        }
+
+        return Visit(expression.Body, token);
+    }
+
+    public override Type? VisitForIn(ForInExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+
+        var varType = Visit(expression.Variable, token);
+        
+        if (varType is null)
+            return null;
+
+        var arrayType = Visit(expression.Collection, token);
+        if (arrayType is null)
+            return null;
+
+        if (!arrayType.IsAssignableTo(typeof(Array)))
+        {
+            _errors.Add(new InterpreterException("Expected array", expression.Collection.Range));
+            return null;
+        }
+
+        if (arrayType == typeof(double[]) && varType != typeof(double))
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Variable, varType, typeof(double)));
+            return null;
+        }
+        
+        if (arrayType == typeof(string[]) && varType != typeof(string))
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Variable, varType, typeof(string)));
+            return null;
+        }
+        
+        if (arrayType == typeof(bool[]) && varType != typeof(bool))
+        {
+            _errors.Add(new ExpectedOtherTypeException(expression.Variable, varType, typeof(bool)));
+            return null;
+        }
+
+        return Visit(expression.Body, token);
+    }
+
     public override Type? VisitIf(IfExpression expression, CancellationToken token)
     {
         if (token.IsCancellationRequested)

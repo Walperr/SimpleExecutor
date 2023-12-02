@@ -24,6 +24,20 @@ public abstract class ExpressionWalker : ExpressionVisitor
         Visit(expression.Body);
     }
 
+    public override void VisitForTo(ForToExpression expression)
+    {
+        Visit(expression.Variable);
+        Visit(expression.Count);
+        Visit(expression.Body);
+    }
+
+    public override void VisitForIn(ForInExpression expression)
+    {
+        Visit(expression.Variable);
+        Visit(expression.Collection);
+        Visit(expression.Body);
+    }
+
     public override void VisitIf(IfExpression expression)
     {
         Visit(expression.Condition);
