@@ -8,7 +8,7 @@ string[] colors = ['red', 'purple', 'blue', 'orange', 'yellow']
 
 for (number i = 0; i <= 500; i++)
 {
-    setColor(colors[i % length(colors)])
+    setColor(colors[i % size(colors)])
     move(i)
     rotate(59)	
 }

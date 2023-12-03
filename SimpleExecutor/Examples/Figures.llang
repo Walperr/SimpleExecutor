@@ -13,14 +13,14 @@ rotate(90)
 
 for number i in range(0, 200)
 {
-    setColor(colors[i % length(colors)])
+    setColor(colors[i % size(colors)])
     move(i * 0.1)
     rotate(15)
 }
 
 for number i in reverse(range(0, 200))
 {
-    setColor(colors[i % length(colors)])
+    setColor(colors[i % size(colors)])
     move(i * 0.1)
     rotate(-15)
 }
@@ -38,7 +38,7 @@ for number n = 3 to 10
 
     for number i = 0 to n
     {
-        setColor(colors[i % length(colors)])
+        setColor(colors[i % size(colors)])
         move(400 / n)
         rotate(360 / n)
     }

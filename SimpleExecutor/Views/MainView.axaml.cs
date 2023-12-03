@@ -55,7 +55,7 @@ public partial class MainView : UserControl
         
         var files = await TopLevel.GetTopLevel(this)!.StorageProvider.OpenFilePickerAsync(new()
         {
-            AllowMultiple = false,
+            AllowMultiple = true,
             FileTypeFilter = new[] {CodeFileType}
         });
 

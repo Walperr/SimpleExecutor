@@ -83,7 +83,7 @@ public partial class ExecutorTabView : UserControl
     {
         try
         {
-            if (Interlocked.Increment(ref _syncLocks) > 0)
+            if (Interlocked.Increment(ref _syncLocks) > 1)
                 return;
         
             if (e.PropertyName is nameof(ExecutorTabViewModel.Code))

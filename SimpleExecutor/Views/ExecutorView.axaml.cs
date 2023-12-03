@@ -36,6 +36,8 @@ public partial class ExecutorView : UserControl
         }
 
         base.OnDataContextChanged(e);
+        
+        InvalidateVisual();
     }
 
     protected override void OnSizeChanged(SizeChangedEventArgs e)

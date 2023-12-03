@@ -9,7 +9,7 @@ public static class ArrayLibrary
 {
     public static IEnumerable<FunctionBase> GetFunctions()
     {
-        yield return FunctionBase.Create("length", args => (double)((Array)args[0]).Length, typeof(Array));
+        yield return FunctionBase.Create("size", args => (double)((Array)args[0]).Length, typeof(Array));
 
         yield return FunctionBase.Create<Array>("repeatElement", args =>
         {
@@ -23,6 +23,18 @@ public static class ArrayLibrary
                 _ => throw new Exception("Unknown type")
             };
         }, typeof(object), typeof(double));
+
+        yield return FunctionBase.Create("range", args =>
+        {
+            var n = (int)(double)args[0];
+
+            var result = new double[n];
+
+            for (var i = 0; i < n; i++)
+                result[i] = i;
+            
+            return result;
+        }, typeof(double));
 
         yield return FunctionBase.Create("range", args =>
         {
