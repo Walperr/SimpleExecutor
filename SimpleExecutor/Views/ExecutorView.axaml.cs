@@ -29,7 +29,11 @@ public partial class ExecutorView : UserControl
         _executor = DataContext as Executor;
 
         if (_executor is not null)
+        {
             _executor.PropertyChanged += ExecutorOnPropertyChanged;
+            _executor.PixelWidth = Bounds.Width;
+            _executor.PixelHeight = Bounds.Height;
+        }
 
         base.OnDataContextChanged(e);
     }

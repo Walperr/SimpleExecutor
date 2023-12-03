@@ -1,60 +1,73 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Net.Mime;
+using System.Text;
+using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Media;
-using AvaloniaEdit.Indentation;
-using DynamicData;
-using SimpleExecutor.Models;
+using Avalonia.Platform.Storage;
 using SimpleExecutor.ViewModels;
 
 namespace SimpleExecutor.Views;
 
 public partial class MainView : UserControl
 {
-    private ExpressionSyntaxColorizer? _syntaxColorizer;
-    private TokensSyntaxColorizer? _tokensColorizer;
+    private static readonly FilePickerFileType CodeFileType = new("Code")
+    {
+        Patterns = new[] {"*.llang"},
+        MimeTypes = new[] {"text/*"}
+    };
     
     public MainView()
     {
         InitializeComponent();
-
-        Editor.ContextMenu = new ContextMenu
-        {
-            ItemsSource = new List<MenuItem>
-            {
-                new () {Header = "Copy", InputGesture = new KeyGesture(Key.C, KeyModifiers.Control)},
-                new () {Header = "Paste", InputGesture = new KeyGesture(Key.V, KeyModifiers.Control)},
-                new () {Header = "Cut", InputGesture = new KeyGesture(Key.X, KeyModifiers.Control)},
-            }
-        };
-        Editor.Options.ShowBoxForControlCharacters = true;
-        Editor.Options.ColumnRulerPositions = new[] { 80, 100 };
-        Editor.Options.HighlightCurrentLine = true;
-        Editor.TextArea.IndentationStrategy = new DefaultIndentationStrategy();
-        Editor.TextChanged += EditorOnTextChanged;
     }
 
-    private void EditorOnTextChanged(object? sender, EventArgs e)
+    public async Task Save()
     {
-        if (DataContext is MainViewModel mainViewModel)
-            mainViewModel.Code = Editor.Text;
-    }
-
-    protected override void OnDataContextChanged(EventArgs e)
-    {
-        var lineTransformers = Editor.TextArea.TextView.LineTransformers;
-
-        if (DataContext is MainViewModel viewModel)
-        {
-            lineTransformers.Remove(_syntaxColorizer);
-            lineTransformers.Remove(_tokensColorizer);
-            _syntaxColorizer = viewModel.ExpressionSyntaxColorizer;
-            _tokensColorizer = viewModel.TokensSyntaxColorizer;
-            lineTransformers.Add(_syntaxColorizer);
-            lineTransformers.Add(_tokensColorizer);
-        }
+        if (TabControl.SelectedItem is not ExecutorTabViewModel tabViewModel)
+            return;
         
-        base.OnDataContextChanged(e);
+        var file = await TopLevel.GetTopLevel(this)!.StorageProvider.SaveFilePickerAsync(new()
+        {
+            SuggestedFileName = tabViewModel.Name,
+            DefaultExtension = ".llang",
+            FileTypeChoices = new[] {CodeFileType}
+        });
+        
+        if (file is null)
+            return;
+
+        await using var stream = await file.OpenWriteAsync();
+
+        var bytes = Encoding.Default.GetBytes(tabViewModel.Code);
+
+        await stream.WriteAsync(bytes);
+
+        tabViewModel.Name = file.Name;
+    }
+
+    public async Task OpenScript()
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+            return;
+        
+        var files = await TopLevel.GetTopLevel(this)!.StorageProvider.OpenFilePickerAsync(new()
+        {
+            AllowMultiple = false,
+            FileTypeFilter = new[] {CodeFileType}
+        });
+
+        foreach (var file in files)
+        {
+            var tab = viewModel.AddTab(file.Name);
+            
+            await using var stream = await file.OpenReadAsync();
+
+            using var reader = new StreamReader(stream);
+
+            tab.Code = await reader.ReadToEndAsync();
+        }
     }
 }

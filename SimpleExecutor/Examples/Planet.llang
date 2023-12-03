@@ -1,0 +1,62 @@
+reset();
+setBackground('black')
+
+// Координаты солнца
+number sunX = getWidth() / 2;
+number sunY = getHeight() / 2;
+
+// Рисуем солнце как желтый круг
+jump(sunX - 0.5, sunY - 0.5);
+
+setFillColor('yellow');
+setColor('orange')
+
+beginPolygon()
+
+repeat 60 times
+{
+    move(1)
+    rotate(6)
+}
+
+completePolygon()
+
+// Масса солнца
+number sunWeight = 100;
+
+// Начальные координаты планеты
+number x = sunX;
+number y = 20;
+
+// Масса планеты
+number planetWeight = 1;
+
+// Начальная скорость планеты
+number velocityX = 0.5;
+number velocityY = 0;
+
+// Поместили планету на место
+jump(x,y);
+
+number deltaTime = 20
+setStep(deltaTime);
+
+// Цвет хвоста от планеты - синий
+setColor('blue')
+
+// Основной цикл, тут все считается
+while(true)
+{
+    number rX = x - sunX;
+    number rY = y - sunY;
+	
+    number r = sqrt(rX * rX + rY * rY);
+	    	
+    velocityX = velocityX - (sunWeight  * rX / (r * r * r)) * deltaTime;
+    velocityY = velocityY - (sunWeight * rY / (r * r * r)) * deltaTime;
+		
+    x = x + velocityX * deltaTime;
+    y = y + velocityY * deltaTime;
+	
+    moveTo(x, y);
+}

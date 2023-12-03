@@ -1,0 +1,28 @@
+reset()
+
+// Количество сторон многоугольника
+number nSides = 6
+number size = 500
+
+// Обводка - зеленая
+setColor('green')
+
+// Закрашиваем красным
+setFillColor('red')
+
+// Нужно ли закрасить многоугольник
+bool fill = true
+
+jump(getWidth() / 2, getHeight() / 2)
+
+if (fill)
+	beginPolygon()
+
+for number i = 0 to nSides
+{
+	move(size / nSides)
+	rotate(360 / nSides)
+}
+
+if (fill)
+	completePolygon()

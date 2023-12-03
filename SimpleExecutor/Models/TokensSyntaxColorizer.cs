@@ -7,9 +7,9 @@ namespace SimpleExecutor.Models;
 
 public sealed class TokensSyntaxColorizer : DocumentColorizingTransformer
 {
-    private readonly MainViewModel _viewModel;
+    private readonly ExecutorTabViewModel _viewModel;
 
-    public TokensSyntaxColorizer(MainViewModel viewModel)
+    public TokensSyntaxColorizer(ExecutorTabViewModel viewModel)
     {
         _viewModel = viewModel;
     }

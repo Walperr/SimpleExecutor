@@ -74,6 +74,7 @@ public sealed class Executor : ViewModelBase
 
         _polygon.Complete();
         _polygon = null;
+        this.RaisePropertyChanged(nameof(Shapes));
     }
 
     public void Move(double length)

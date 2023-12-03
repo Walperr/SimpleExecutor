@@ -4,54 +4,30 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:SimpleExecutor.ViewModels"
              xmlns:views="clr-namespace:SimpleExecutor.Views"
-             xmlns:avaloniaEdit="https://github.com/avaloniaui/avaloniaedit"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:DataType="viewModels:MainViewModel"
-             x:Class="SimpleExecutor.Views.MainView">
-    <UserControl.Resources>
-        
-    </UserControl.Resources>
-    <Grid RowDefinitions="*, Auto">
-        <Grid ColumnDefinitions="*, *">
-            <Border Grid.Column="0" 
-                    BorderThickness="1"
-                    BorderBrush="Gray"
-                    Margin="4,2,10,10"
-                    CornerRadius="3">
-                <views:ExecutorView DataContext="{Binding Executor}"/>
-            </Border>
-            <GridSplitter Grid.Column="0"
-                          HorizontalAlignment="Right"
-                          VerticalAlignment="Stretch"
-                          Width="1"/>
-            <avaloniaEdit:TextEditor Grid.Column="1"
-                                     x:Name="Editor"
-                                     BorderBrush="Gray"
-                                     BorderThickness="1"
-                                     Margin="2,2,4,10"
-                                     ShowLineNumbers="True"
-                                     LineNumbersForeground="DimGray"
-                                     FontFamily="Consolas,Menlo,Monospace"/>
-        </Grid>
-        <GridSplitter Grid.Row="0"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Bottom"
-                      Height="1"/>
-        <DockPanel Grid.Row="1" LastChildFill="True"
-                    Margin="2">
-            <StackPanel DockPanel.Dock="Left">
-                <Button Content="Run"
-                        Command="{Binding InterpretCommand}"
-                        VerticalAlignment="Top"/>
-                <Button Content="Stop"
-                        Command="{Binding StopInterpreterCommand}"
-                        VerticalAlignment="Top"/>
-            </StackPanel>
-            <TextBox Text="{Binding Output}"
-                     IsReadOnly="True"
-                     Margin="5"
-                     TextAlignment="Left"
-                     TextWrapping="Wrap"/>
-        </DockPanel>
+             x:Class="SimpleExecutor.Views.MainView"
+             x:DataType="viewModels:MainWindowViewModel">
+    <Grid RowDefinitions="Auto, *">
+        <StackPanel Orientation="Horizontal">
+            <Button Content="Add tab" Command="{Binding AddNewTabCommand}"/>
+            <Button Content="Remove tab" Command="{Binding RemoveTabCommand}"
+                    CommandParameter="{Binding #TabControl.SelectedItem}"/>
+            <Button Content="Save" Command="{Binding $parent[views:MainView].Save}"/>
+            <Button Content="Open" Command="{Binding $parent[views:MainView].OpenScript}"/>
+        </StackPanel>
+        <TabControl Grid.Row="1"
+                    ItemsSource="{Binding Tabs}" TabStripPlacement="Top"
+                    Name="TabControl">
+            <TabControl.ItemTemplate>
+                <DataTemplate DataType="viewModels:ExecutorTabViewModel">
+                    <TextBlock Text="{Binding Name}"/>
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.ContentTemplate>
+                <DataTemplate DataType="viewModels:ExecutorTabViewModel">
+                    <views:ExecutorTabView/>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+        </TabControl>
     </Grid>
 </UserControl>

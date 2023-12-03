@@ -44,7 +44,7 @@ public sealed class TurtleLibrary
 
         yield return FunctionBase.Create("beginPolygon", _ => _turtle.BeginPolygon());
 
-        yield return FunctionBase.Create("completePolygon", _ => _turtle.CompletePolygon());
+        yield return FunctionBase.Create("completePolygon", _ => _dispatcher.Invoke(() => _turtle.CompletePolygon()));
 
         yield return FunctionBase.Create("move", args =>
         {

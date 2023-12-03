@@ -1,0 +1,24 @@
+reset()
+setStep(1)
+jump(getWidth() / 2, getHeight() / 2)
+
+setColor('red')
+setFillColor('red')
+
+beginPolygon()
+
+rotate(-230)
+move(113)
+
+for number i in range(0, 400)
+{
+	rotate(1)
+	move(1)
+	
+	if (i == 200)
+		rotate(-120)
+}
+
+move(112)
+
+completePolygon()

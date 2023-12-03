@@ -1,0 +1,47 @@
+reset()
+setStep(1)
+
+setWidth(5)
+
+setBackground('black')
+
+string[] colors = ['red', 'orange','yellow', 'green', 'aqua', 'blue', 'purple']
+
+jump(getWidth() / 4, getHeight() * 3 / 4)
+
+rotate(90)
+
+for number i in range(0, 200)
+{
+    setColor(colors[i % length(colors)])
+    move(i * 0.1)
+    rotate(15)
+}
+
+for number i in reverse(range(0, 200))
+{
+    setColor(colors[i % length(colors)])
+    move(i * 0.1)
+    rotate(-15)
+}
+
+setFillColor('white')
+
+for number n = 3 to 10
+{
+    if (n < 8)
+        jump(getWidth() * (n - 3) / 5, getHeight() / 4)
+    else
+        jump(getWidth() * (n - 6) / 4, getHeight() * 3 / 4)
+
+    beginPolygon()
+
+    for number i = 0 to n
+    {
+        setColor(colors[i % length(colors)])
+        move(400 / n)
+        rotate(360 / n)
+    }
+
+    completePolygon()
+}

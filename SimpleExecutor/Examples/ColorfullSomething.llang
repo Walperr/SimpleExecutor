@@ -1,0 +1,14 @@
+reset()
+setBackground('black')
+setStep(10)
+
+jump(getWidth() * 0.5, getHeight() * 0.5)
+
+string[] colors = ['red', 'purple', 'blue', 'orange', 'yellow']
+
+for (number i = 0; i <= 500; i++)
+{
+    setColor(colors[i % length(colors)])
+    move(i)
+    rotate(59)	
+}

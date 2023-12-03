@@ -32,4 +32,35 @@
     <ItemGroup>
       <ProjectReference Include="..\LanguageInterpreter\LanguageInterpreter.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Examples\ColorfullSomething.llang" />
+      <Content Include="Examples\ColorfullSomething.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Examples\Figures.llang" />
+      <Content Include="Examples\Figures.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Examples\Heart.llang" />
+      <Content Include="Examples\Heart.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Examples\HelloWorld.llang" />
+      <Content Include="Examples\HelloWorld.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Examples\Planet.llang" />
+      <Content Include="Examples\Planet.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Examples\Polygon.llang" />
+      <Content Include="Examples\Polygon.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Examples\Spiral.llang" />
+      <Content Include="Examples\Spiral.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
 </Project>
