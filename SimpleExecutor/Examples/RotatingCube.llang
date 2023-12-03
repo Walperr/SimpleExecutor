@@ -1,0 +1,58 @@
+number[] Xs = [1, 1, -1, -1, 1, 1, -1, -1]
+number[] Ys = [-1, 1, 1, -1, -1, 1, 1, -1]
+number[] Zs = [-1, -1, -1, -1, 1, 1, 1, 1]
+
+number[] transformedXs = number[8]
+number[] transformedYs = number[8]
+number[] transformedZs = number[8]
+
+number[] screenXs = number[8]
+number[] screenYs = number[8]
+
+number angle = 0
+number zOffset = 1
+
+setStep(0)
+
+number j = 0
+
+while (true)
+{
+	++j
+	number centerX = getWidth() / 2
+	number centerY = getHeight() / 2
+
+	number sx = centerX
+	number sy = centerY
+		
+	angle = ++angle % 360
+	
+	zOffset = 5 + 2 * sin(j)
+	
+	for number i = 0 to size(Xs)
+	{
+		transformedXs[i] = Xs[i] * cos(angle) - Zs[i] * sin(angle)
+		transformedYs[i] = Ys[i]
+		transformedZs[i] = Xs[i] * sin(angle) + Zs[i] * cos(angle) + zOffset
+	}
+
+	for number i = 0 to size(Xs)
+	{
+		screenXs[i] = transformedXs[i] / transformedZs[i] * sx + centerX
+		screenYs[i] = transformedYs[i] / transformedZs[i] * sy + centerY
+	}
+	
+	reset()
+	jump(screenXs[0], screenYs[0])
+	
+	for number i in [1,2,3,0]
+		moveTo(screenXs[i], screenYs[i])
+		
+	for number i in [4,5,6,7,4]
+		moveTo(screenXs[i], screenYs[i])
+	
+	for number i in [4,5,1,5,6,2,6,7,3]
+		moveTo(screenXs[i], screenYs[i])
+				
+	delay(15)
+}
