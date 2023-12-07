@@ -8,7 +8,7 @@ using SkiaSharp;
 
 namespace SimpleExecutor.Models;
 
-public sealed class Executor : ViewModelBase
+public sealed class Turtle : ViewModelBase
 {
     private readonly List<Shape> _shapes = new();
     private double _angle;

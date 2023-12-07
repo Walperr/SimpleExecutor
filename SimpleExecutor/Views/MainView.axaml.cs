@@ -26,7 +26,7 @@ public partial class MainView : UserControl
 
     public async Task Save()
     {
-        if (TabControl.SelectedItem is not ExecutorTabViewModel tabViewModel)
+        if (TabControl.SelectedItem is not TurtleTabViewModel tabViewModel)
             return;
         
         var file = await TopLevel.GetTopLevel(this)!.StorageProvider.SaveFilePickerAsync(new()

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -10,47 +11,25 @@ using SimpleExecutor.Models;
 
 namespace SimpleExecutor.ViewModels;
 
-public class ExecutorTabViewModel : ViewModelBase, IDisposable
+public abstract class TabBase : ViewModelBase, IDisposable
 {
     private CancellationTokenSource? _cancellation;
     private string _code = string.Empty;
     private ICommand? _interpretCommand;
+
+    private string _name = "executor";
     private string _output = string.Empty;
     private ICommand? _stopCommand;
-    private string _name = "New Turtle";
 
-    public ExecutorTabViewModel()
+    protected TabBase()
     {
-        var printFunction = new Function("print", new[] {new Variable("text", typeof(object))},
-            args => Output += args[0].ToString());
-
-        var printLineFunction = new Function("printLine", new[] {new Variable("text", typeof(object))},
-            args => Output += "\n" + args[0]);
-
-        var delayFunction = new Function("delay", new[] {new Variable("milliseconds", typeof(double))}, args =>
-        {
-            var time = (double) args[0];
-            Task.Delay((int) time).Wait();
-        });
-
-        var turtle = new TurtleLibrary(Executor);
-
         TokensSyntaxColorizer = new TokensSyntaxColorizer(this);
         ExpressionSyntaxColorizer = new ExpressionSyntaxColorizer(this);
 
-        Interpreter = InterpreterBuilder.CreateBuilder()
-            .WithPredefinedFunction(printFunction)
-            .WithPredefinedFunction(printLineFunction)
-            .WithPredefinedFunction(delayFunction)
-            .WithPredefinedFunctions(ArrayLibrary.GetFunctions())
-            .WithPredefinedFunctions(MathLibrary.GetMathFunctions())
-            .WithPredefinedFunctions(turtle.GetFunctions())
-            .Build();
+        ConfigureInterpreter();
     }
 
-    private IInterpreter Interpreter { get; }
-
-    public Executor Executor { get; } = new();
+    protected IInterpreter Interpreter { get; private set; }
 
     public ExpressionSyntaxColorizer ExpressionSyntaxColorizer { get; }
     public TokensSyntaxColorizer TokensSyntaxColorizer { get; }
@@ -126,5 +105,36 @@ public class ExecutorTabViewModel : ViewModelBase, IDisposable
     {
         _cancellation?.Cancel();
         _cancellation?.Dispose();
+    }
+
+    [MemberNotNull(nameof(Interpreter))]
+    private void ConfigureInterpreter()
+    {
+        var printFunction = new Function("print", new[] { new Variable("text", typeof(object)) },
+            args => Output += args[0].ToString());
+
+        var printLineFunction = new Function("printLine", new[] { new Variable("text", typeof(object)) },
+            args => Output += "\n" + args[0]);
+
+        var delayFunction = new Function("delay", new[] { new Variable("milliseconds", typeof(double)) }, args =>
+        {
+            var time = (double)args[0];
+            Task.Delay((int)time).Wait();
+        });
+
+        var builder = InterpreterBuilder.CreateBuilder()
+            .WithPredefinedFunction(printFunction)
+            .WithPredefinedFunction(printLineFunction)
+            .WithPredefinedFunction(delayFunction)
+            .WithPredefinedFunctions(ArrayLibrary.GetFunctions())
+            .WithPredefinedFunctions(MathLibrary.GetMathFunctions());
+
+        OnInterpreterConfigured(builder);
+
+        Interpreter = builder.Build();
+    }
+
+    protected virtual void OnInterpreterConfigured(InterpreterBuilder builder)
+    {
     }
 }

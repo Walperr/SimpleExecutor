@@ -9,25 +9,29 @@
              x:DataType="viewModels:MainWindowViewModel">
     <Grid RowDefinitions="Auto, *">
         <StackPanel Orientation="Horizontal">
-            <Button Content="Add tab" Command="{Binding AddNewTabCommand}"/>
+            <Button Content="New turtle" Command="{Binding AddNewTurtleCommand}" />
+            <Button Content="New robot" Command="{Binding AddNewRobotCommand}" />
             <Button Content="Remove tab" Command="{Binding RemoveTabCommand}"
-                    CommandParameter="{Binding #TabControl.SelectedItem}"/>
-            <Button Content="Save" Command="{Binding $parent[views:MainView].Save}"/>
-            <Button Content="Open" Command="{Binding $parent[views:MainView].OpenScript}"/>
+                    CommandParameter="{Binding #TabControl.SelectedItem}" />
+            <Button Content="Save" Command="{Binding $parent[views:MainView].Save}" />
+            <Button Content="Open" Command="{Binding $parent[views:MainView].OpenScript}" />
         </StackPanel>
         <TabControl Grid.Row="1"
                     ItemsSource="{Binding Tabs}" TabStripPlacement="Top"
                     Name="TabControl">
             <TabControl.ItemTemplate>
-                <DataTemplate DataType="viewModels:ExecutorTabViewModel">
-                    <TextBlock Text="{Binding Name}"/>
+                <DataTemplate DataType="viewModels:TabBase">
+                    <TextBlock Text="{Binding Name}" />
                 </DataTemplate>
             </TabControl.ItemTemplate>
-            <TabControl.ContentTemplate>
-                <DataTemplate DataType="viewModels:ExecutorTabViewModel">
-                    <views:ExecutorTabView/>
+            <TabControl.DataTemplates>
+                <DataTemplate DataType="viewModels:TurtleTabViewModel">
+                    <views:TurtleTabView />
                 </DataTemplate>
-            </TabControl.ContentTemplate>
+                <DataTemplate DataType="viewModels:RobotTabViewModel">
+                    <views:RobotTabView DataContext="{Binding .}" />
+                </DataTemplate>
+            </TabControl.DataTemplates>
         </TabControl>
     </Grid>
 </UserControl>

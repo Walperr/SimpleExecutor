@@ -8,9 +8,9 @@ namespace SimpleExecutor.Models;
 
 public sealed class ExpressionSyntaxColorizer : DocumentColorizingTransformer
 {
-    private readonly ExecutorTabViewModel _viewModel;
+    private readonly TabBase _viewModel;
 
-    public ExpressionSyntaxColorizer(ExecutorTabViewModel viewModel)
+    public ExpressionSyntaxColorizer(TabBase viewModel)
     {
         _viewModel = viewModel;
     }

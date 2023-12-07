@@ -10,15 +10,15 @@ using SimpleExecutor.ViewModels;
 
 namespace SimpleExecutor.Views;
 
-public partial class ExecutorTabView : UserControl
+public partial class TurtleTabView : UserControl
 {
     private ExpressionSyntaxColorizer? _syntaxColorizer;
     private TokensSyntaxColorizer? _tokensColorizer;
-    private ExecutorTabViewModel? _viewModel;
+    private TurtleTabViewModel? _viewModel;
 
     private int _syncLocks;
 
-    public ExecutorTabView()
+    public TurtleTabView()
     {
         InitializeComponent();
 
@@ -45,7 +45,7 @@ public partial class ExecutorTabView : UserControl
             if (Interlocked.Increment(ref _syncLocks) > 1)
                 return;
         
-            if (DataContext is ExecutorTabViewModel mainViewModel)
+            if (DataContext is TurtleTabViewModel mainViewModel)
                 mainViewModel.Code = Editor.Text;
         }
         finally
@@ -63,7 +63,7 @@ public partial class ExecutorTabView : UserControl
 
         _viewModel = null;
 
-        if (DataContext is ExecutorTabViewModel viewModel)
+        if (DataContext is TurtleTabViewModel viewModel)
         {
             lineTransformers.Remove(_syntaxColorizer);
             lineTransformers.Remove(_tokensColorizer);
@@ -86,7 +86,7 @@ public partial class ExecutorTabView : UserControl
             if (Interlocked.Increment(ref _syncLocks) > 1)
                 return;
         
-            if (e.PropertyName is nameof(ExecutorTabViewModel.Code))
+            if (e.PropertyName is nameof(TurtleTabViewModel.Code))
                 Editor.Text = _viewModel!.Code;
         }
         finally

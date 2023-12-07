@@ -1,24 +1,35 @@
 ﻿using System.Collections.Generic;
-using System.Reactive;
 using System.Windows.Input;
 using Avalonia.Collections;
-using Avalonia.Controls;
-using AvaloniaEdit;
 using ReactiveUI;
 
 namespace SimpleExecutor.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
-    private readonly AvaloniaList<ExecutorTabViewModel> _tabs = new();
+    private readonly AvaloniaList<TabBase> _tabs = new();
+    private ICommand? _addNewRobotCommand;
     private ICommand? _addNewTabCommand;
     private ICommand? _removeTabCommand;
 
-    public IEnumerable<ExecutorTabViewModel> Tabs => _tabs;
+    public IEnumerable<TabBase> Tabs => _tabs;
 
-    public ExecutorTabViewModel AddTab(string name)
+    public ICommand AddNewTurtleCommand =>
+        _addNewTabCommand ??= ReactiveCommand.Create(() => _tabs.Add(new TurtleTabViewModel()));
+
+    public ICommand AddNewRobotCommand =>
+        _addNewRobotCommand ??= ReactiveCommand.Create(() => _tabs.Add(new RobotTabViewModel()));
+
+    public ICommand RemoveTabCommand =>
+        _removeTabCommand ??= ReactiveCommand.Create<TabBase>(o =>
+        {
+            _tabs.Remove(o);
+            o.Dispose();
+        });
+
+    public TurtleTabViewModel AddTab(string name)
     {
-        var tab = new ExecutorTabViewModel
+        var tab = new TurtleTabViewModel
         {
             Name = name
         };
@@ -27,14 +38,4 @@ public class MainWindowViewModel : ViewModelBase
 
         return tab;
     }
-
-    public ICommand AddNewTabCommand =>
-        _addNewTabCommand ??= ReactiveCommand.Create(() => _tabs.Add(new ExecutorTabViewModel()));
-
-    public ICommand RemoveTabCommand =>
-        _removeTabCommand ??= ReactiveCommand.Create<ExecutorTabViewModel>(o =>
-        {
-            _tabs.Remove(o);
-            o.Dispose();
-        });
 }

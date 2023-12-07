@@ -9,12 +9,12 @@ using SkiaSharp;
 
 namespace SimpleExecutor.Views;
 
-public partial class ExecutorView : UserControl
+public partial class TurtleView : UserControl
 {
     private readonly SkiaCanvasDrawOperation _drawOperation = new();
-    private Executor? _executor;
+    private Turtle? _executor;
 
-    public ExecutorView()
+    public TurtleView()
     {
         InitializeComponent();
 
@@ -26,7 +26,7 @@ public partial class ExecutorView : UserControl
         if (_executor is not null)
             _executor.PropertyChanged -= ExecutorOnPropertyChanged;
 
-        _executor = DataContext as Executor;
+        _executor = DataContext as Turtle;
 
         if (_executor is not null)
         {
@@ -53,7 +53,7 @@ public partial class ExecutorView : UserControl
 
     private void ExecutorOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(Executor.PixelWidth) && e.PropertyName != nameof(Executor.PixelHeight))
+        if (e.PropertyName != nameof(Turtle.PixelWidth) && e.PropertyName != nameof(Turtle.PixelHeight))
             InvalidateVisual();
     }
 

@@ -6,21 +6,21 @@
              xmlns:views="clr-namespace:SimpleExecutor.Views"
              xmlns:viewModels="clr-namespace:SimpleExecutor.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="SimpleExecutor.Views.ExecutorTabView"
-             x:DataType="viewModels:ExecutorTabViewModel">
+             x:Class="SimpleExecutor.Views.RobotTabView"
+             x:DataType="viewModels:RobotTabViewModel">
     <Grid RowDefinitions="*, Auto">
-        <Grid ColumnDefinitions="*, *">
-            <Border Grid.Column="0" 
+        <Grid ColumnDefinitions="*,*">
+            <Border Grid.Column="0"
                     BorderThickness="1"
                     BorderBrush="Gray"
                     Margin="4,2,10,10"
                     CornerRadius="3">
-                <views:ExecutorView DataContext="{Binding Executor}"/>
+                <views:RobotView DataContext="{Binding Robot}" />
             </Border>
             <GridSplitter Grid.Column="0"
                           HorizontalAlignment="Right"
                           VerticalAlignment="Stretch"
-                          Width="1"/>
+                          Width="1" />
             <avaloniaEdit:TextEditor Grid.Column="1"
                                      x:Name="Editor"
                                      BorderBrush="Gray"
@@ -28,27 +28,27 @@
                                      Margin="2,2,4,10"
                                      ShowLineNumbers="True"
                                      LineNumbersForeground="DimGray"
-                                     FontFamily="Consolas,Menlo,Monospace"/>
+                                     FontFamily="Consolas,Menlo,Monospace" />
         </Grid>
         <GridSplitter Grid.Row="0"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Bottom"
-                      Height="1"/>
+                      Height="1" />
         <DockPanel Grid.Row="1" LastChildFill="True"
                    Margin="2">
             <StackPanel DockPanel.Dock="Left">
                 <Button Content="Run"
                         Command="{Binding InterpretCommand}"
-                        VerticalAlignment="Top"/>
+                        VerticalAlignment="Top" />
                 <Button Content="Stop"
                         Command="{Binding StopInterpreterCommand}"
-                        VerticalAlignment="Top"/>
+                        VerticalAlignment="Top" />
             </StackPanel>
             <TextBox Text="{Binding Output}"
                      IsReadOnly="True"
                      Margin="5"
                      TextAlignment="Left"
-                     TextWrapping="Wrap"/>
+                     TextWrapping="Wrap" />
         </DockPanel>
     </Grid>
 </UserControl>
