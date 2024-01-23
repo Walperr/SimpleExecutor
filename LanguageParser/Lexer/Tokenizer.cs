@@ -98,6 +98,8 @@ public sealed class Tokenizer
             "bool" => new Token(SyntaxKind.Bool, token.Lexeme, token.Range.Start),
             "or" => new Token(SyntaxKind.ConditionalOrOperator, token.Lexeme, token.Range.Start),
             "and" => new Token(SyntaxKind.ConditionalAndOperator, token.Lexeme, token.Range.Start),
+            "function" => new Token(SyntaxKind.Function, token.Lexeme, token.Range.Start),
+            "return" => new Token(SyntaxKind.Return, token.Lexeme, token.Range.Start),
             "true" => new Token(SyntaxKind.True, token.Lexeme, token.Range.Start),
             "false" => new Token(SyntaxKind.False, token.Lexeme, token.Range.Start),
             _ => token

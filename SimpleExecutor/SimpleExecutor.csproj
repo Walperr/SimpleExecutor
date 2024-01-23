@@ -66,5 +66,9 @@
       <Content Include="Документация.pdf">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <None Remove="Examples\RotatingCube.llang" />
+      <Content Include="Examples\RotatingCube.llang">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 </Project>

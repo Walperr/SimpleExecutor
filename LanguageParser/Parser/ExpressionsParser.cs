@@ -12,6 +12,7 @@ public sealed class ExpressionsParser
 {
     private readonly List<SyntaxException> _errors = new();
     private readonly IStream<Token> _tokens;
+    private int _funcNesting = 0;
 
     internal ExpressionsParser(IStream<Token> tokens)
     {
@@ -335,6 +336,10 @@ public sealed class ExpressionsParser
                 return ParseRepeatExpression();
             case SyntaxKind.For:
                 return ParseForExpression();
+            case SyntaxKind.Return:
+                return ParseReturnExpression();
+            case SyntaxKind.Function:
+                return ParseFunctionDeclaration();
             case SyntaxKind.EOF:
                 _errors.Add(new UnexpectedEofException(_tokens.Current.Range));
                 return null;
@@ -342,6 +347,62 @@ public sealed class ExpressionsParser
                 _errors.Add(new UnexpectedTokenException(_tokens.Current));
                 return null;
         }
+    }
+
+    private ExpressionBase? ParseFunctionDeclaration()
+    {
+        _funcNesting++;
+        try
+        {
+            var functionToken = EatToken(SyntaxKind.Function);
+
+            if (functionToken is null)
+                return null;
+            
+            var nameToken = EatToken(SyntaxKind.Word);
+
+            if (nameToken is null)
+                return null;
+
+            if (!TryParseSeparated(SyntaxKind.OpenParenthesis, SyntaxKind.CloseParenthesis, SyntaxKind.Comma,
+                    out var open,
+                    out var @params,
+                    out var close))
+                return null;
+
+            var body = ParseExpression();
+
+            if (body is null) 
+                return null;
+
+            return new FunctionDeclarationExpression(functionToken, nameToken, open, @params, close, body);
+        }
+        finally
+        {
+            _funcNesting--;
+        }
+    }
+
+    private ExpressionBase? ParseReturnExpression()
+    {
+        var returnToken = EatToken(SyntaxKind.Return);
+
+        if (returnToken is null)
+            return null;
+        
+        if (_funcNesting < 1)
+        {
+            _errors.Add(new SyntaxException("return expression can be used only inside function body",
+                returnToken.Range));
+            return null;
+        }
+        
+        if (_tokens.Current.Kind is SyntaxKind.Semicolon)
+            return new ReturnExpression(returnToken);
+
+        var expression = ParseSubExpression(Precedence.Expression);
+
+        return new ReturnExpression(returnToken, expression);
     }
 
     private ExpressionBase? ArrayInitializationExpression()

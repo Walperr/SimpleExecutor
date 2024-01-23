@@ -160,6 +160,14 @@ public enum SyntaxKind
     /// </summary>
     Bool,
     /// <summary>
+    /// function keyword
+    /// </summary>
+    Function,
+    /// <summary>
+    /// return keyword
+    /// </summary>
+    Return,
+    /// <summary>
     /// true keyword
     /// </summary>
     True,
@@ -291,6 +299,14 @@ public enum SyntaxKind
     /// for i = a to b expression
     /// </summary>
     ForToExpression,
+    /// <summary>
+    /// void foo() expression
+    /// </summary>
+    FunctionDeclarationExpression,
+    /// <summary>
+    /// return 12
+    /// </summary>
+    ReturnExpression,
     /// <summary>
     /// { expression; expression; ... }
     /// </summary>

@@ -9,6 +9,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
 {
     private readonly List<SyntaxException> _errors = new();
     private readonly ScopeNode _rootScope;
+    private readonly Stack<HashSet<Type>> _funcReturnTypes = new();
 
     private TypeResolver(ScopeNode rootScope)
     {
@@ -609,6 +610,66 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
 
         _errors.Add(new InterpreterException("Unkown type", expression.Range));
         return null;
+    }
+
+    public override Type? VisitReturn(ReturnExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+        
+        if (_funcReturnTypes.TryPeek(out var types))
+        {
+            var type = expression.ReturnValue is null ? typeof(Empty) : Visit(expression.ReturnValue, token);
+
+            if (type is null)
+                return null;
+
+            if (!types.Add(type))
+                _errors.Add(new InterpreterException("function must have only 1 return type", expression.Range));
+
+            return type;
+        }
+
+        _errors.Add(new InterpreterException("return cannot be used outside function body", expression.Range));
+        return null;
+    }
+
+    public override Type? VisitFunctionDeclaration(FunctionDeclarationExpression expression, CancellationToken token)
+    {
+        if (token.IsCancellationRequested)
+        {
+            _errors.Add(new InterpreterException("Operation was cancelled", default));
+            return null;
+        }
+        
+        try
+        {
+            _funcReturnTypes.Push(new HashSet<Type>());
+
+            var type = Visit(expression.Body, token);
+            if (type is null)
+                return null;
+
+            var types = _funcReturnTypes.Peek();
+
+            types.Add(type);
+
+            if (types.Count != 1)
+            {
+                _errors.Add(new InterpreterException("Function cannot have more than one return types",
+                    expression.NameToken.Range));
+                return null;
+            }
+
+            return type;
+        }
+        finally
+        {
+            _funcReturnTypes.Pop();
+        }
     }
 
     private Variable? GetVariable(ExpressionBase expression, string name)

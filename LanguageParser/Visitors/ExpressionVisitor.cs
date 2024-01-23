@@ -77,6 +77,14 @@ public abstract class ExpressionVisitor
     public virtual void VisitArrayInitialization(ArrayInitializationExpression expression)
     {
     }
+
+    public virtual void VisitReturn(ReturnExpression expression)
+    {
+    }
+
+    public virtual void VisitFunctionDeclaration(FunctionDeclarationExpression expression)
+    {
+    }
 }
 
 public abstract class ExpressionVisitor<T, TState>
@@ -117,4 +125,8 @@ public abstract class ExpressionVisitor<T, TState>
     public abstract T VisitElementAccess(ElementAccessExpression expression, TState state);
 
     public abstract T VisitArrayInitialization(ArrayInitializationExpression expression, TState state);
+
+    public abstract T VisitReturn(ReturnExpression expression, TState state);
+
+    public abstract T VisitFunctionDeclaration(FunctionDeclarationExpression expression, TState state);
 }

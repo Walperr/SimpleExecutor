@@ -57,9 +57,9 @@ public sealed class RobotTabViewModel : TabBase
                 Robot.Background = Color.Parse(args[0].ToString() ?? string.Empty).ToSKColor();
             }, typeof(string));
 
-        yield return FunctionBase.Create("getWidth", _ => Robot.Width);
+        yield return FunctionBase.Create("getWidth", _ => (double)Robot.Width);
 
-        yield return FunctionBase.Create("getHeight", _ => Robot.Height);
+        yield return FunctionBase.Create("getHeight", _ => (double)Robot.Height);
 
         yield return FunctionBase.Create("setStep", args => { StepDelay = (int)(double)args[0]; }, typeof(double));
 

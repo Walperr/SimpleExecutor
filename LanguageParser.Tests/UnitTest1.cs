@@ -414,6 +414,45 @@ public class UnitTest1
     }
 
     [Fact]
+    public void CanParseFunctionDeclarations()
+    {
+        var text =
+            "number a = 0;\nnumber b = 0;\nfunction foo()\n{\n\treturn a + b\n};\nfunction bar(number a, number b, string s)\n{\n\tif (a < b) return a\n\telse return s\n}";
+        
+        _testOutputHelper.WriteLine(text);
+
+        var expression = ExpressionsParser.Parse(text);
+
+        if (expression.Error is not null)
+        {
+            _testOutputHelper.WriteLine(expression.Error.Message);
+            _testOutputHelper.WriteLine(expression.Error.Range.ToString());
+        }
+
+        Assert.NotNull(expression.Value);
+        Assert.Null(expression.Error);
+    }
+
+    [Fact]
+    public void CannotUseReturnOutsideOfFunctionScope()
+    {
+        var text = "number a = 10;\nnumber b = 5;\nnumber c = a + b;\nreturn c * 2 + a";
+        
+        _testOutputHelper.WriteLine(text);
+
+        var expression = ExpressionsParser.Parse(text);
+
+        if (expression.Error is not null)
+        {
+            _testOutputHelper.WriteLine(expression.Error.Message);
+            _testOutputHelper.WriteLine(expression.Error.Range.ToString());
+        }
+
+        Assert.Null(expression.Value);
+        Assert.NotNull(expression.Error);
+    }
+
+    [Fact]
     public void CanCollectVariables()
     {
         var text =

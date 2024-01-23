@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Globalization;
-using System.Runtime.InteropServices.JavaScript;
 using LanguageInterpreter.Common;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
@@ -771,6 +770,16 @@ public sealed class ExpressionEvaluator : ExpressionVisitor<object?, Cancellatio
             array[i] = Visit(expression.Elements[i], token);
 
         return array;
+    }
+
+    public override object? VisitReturn(ReturnExpression expression, CancellationToken state)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override object? VisitFunctionDeclaration(FunctionDeclarationExpression expression, CancellationToken state)
+    {
+        throw new NotImplementedException();
     }
 
     private Variable? GetVariable(ExpressionBase expression, string name)

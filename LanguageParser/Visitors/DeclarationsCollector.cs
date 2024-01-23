@@ -91,4 +91,10 @@ public sealed class DeclarationsCollector : ExpressionWalker
 
         base.VisitVariable(expression);
     }
+
+    public override void VisitFunctionDeclaration(FunctionDeclarationExpression expression)
+    {
+        
+        base.VisitFunctionDeclaration(expression);
+    }
 }
