@@ -41,7 +41,7 @@ internal sealed class PreParser
         yield return new Token(SyntaxKind.OpenBrace, "", 0);
         while (stream.Index < stream.Length)
         {
-            if (stream.Current.Kind is SyntaxKind.For)
+            if (stream.Current.Kind is SyntaxKind.For or SyntaxKind.Function)
             {
                 parser ??= new ExpressionsParser(stream);
                 

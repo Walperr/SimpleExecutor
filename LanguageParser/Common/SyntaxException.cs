@@ -32,7 +32,7 @@ public sealed class ExpectedOtherTokenException : SyntaxException
 
 public sealed class UnexpectedTokenException : SyntaxException
 {
-    internal UnexpectedTokenException(Token token) : base($"Unexpected token: '{token.Lexeme}'", token.Range)
+    public UnexpectedTokenException(Token token) : base($"Unexpected token: '{token.Lexeme}'", token.Range)
     {
     }
 }
@@ -53,7 +53,7 @@ public sealed class UnhandledParserException : SyntaxException
 
 public sealed class VariableAlreadyDeclaredException : SyntaxException
 {
-    internal VariableAlreadyDeclaredException(string variableName, StringRange range) : base(
+    public VariableAlreadyDeclaredException(string variableName, StringRange range) : base(
         $"Variable already declared in this scope. {variableName}", range)
     {
     }
@@ -61,7 +61,7 @@ public sealed class VariableAlreadyDeclaredException : SyntaxException
 
 public sealed class UnexpectedExpressionException : SyntaxException
 {
-    internal UnexpectedExpressionException(ExpressionBase expression) : base("Unexpected expression", expression.Range)
+    public UnexpectedExpressionException(ExpressionBase expression) : base("Unexpected expression", expression.Range)
     {
     }
 }
