@@ -2,6 +2,7 @@ namespace Compiler;
 
 public class FunctionBuilder
 {
+    private readonly BinaryWriter _writer;
     private readonly MemoryStream _byteCode = new();
     private readonly int _parametersCount;
     private readonly SortedList<ushort, Variable> _variables = new();
@@ -11,12 +12,20 @@ public class FunctionBuilder
     {
         Name = name;
         _parametersCount = parametersCount;
+        _writer = new BinaryWriter(_byteCode);
     }
 
     public IEnumerable<Variable> Parameters => _variables.Take(_parametersCount).Select(p => p.Value);
     public IEnumerable<Variable> Variables => _variables.Values;
     public string Name { get; }
     public Type? ReturnType { get; private set; }
+
+    public BinaryWriter CodeWriter => _writer;
+
+    public ushort GetVariableID(Variable variable)
+    {
+        return _variables.GetKeyAtIndex(_variables.IndexOfValue(variable));
+    }
 
     public void AddVariable(Type type, string name)
     {

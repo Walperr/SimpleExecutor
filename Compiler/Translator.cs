@@ -8,9 +8,7 @@ namespace Compiler;
 public sealed class Translator : ExpressionVisitor
 {
     private readonly ScopeNode _root;
-    private readonly MemoryStream _byteCode = new();
     private readonly ConstantsWriter _constantsWriter = new();
-    private readonly BinaryWriter _codeWriter;
     private FunctionBuilder _currentContext;
 
     private readonly List<Type> _definedTypes = new()
@@ -25,7 +23,6 @@ public sealed class Translator : ExpressionVisitor
         _root = root;
         _currentContext = root.GetFunction(".main", Enumerable.Empty<Type>()) ??
                           throw new Exception("Entry point not found!");
-        _codeWriter = new BinaryWriter(_byteCode);
     }
 
     private void Translate()
@@ -36,23 +33,24 @@ public sealed class Translator : ExpressionVisitor
     public override void VisitConstant(ConstantExpression expression)
     {
         ushort id;
-
+        var codeWriter = _currentContext.CodeWriter;
+        
         if (expression.IsBool)
         {
             var boolean = bool.Parse(expression.Lexeme);
-            _codeWriter.Write(Opcodes.OpLoadConst);
-            _codeWriter.Write(_constantsWriter.AddConstant(boolean));
+            codeWriter.Write(Opcodes.OpLoadConst);
+            codeWriter.Write(_constantsWriter.AddConstant(boolean));
         }
         else if (expression.IsNumber)
         {
             var number = double.Parse(expression.Lexeme, NumberStyles.Float, CultureInfo.InvariantCulture);
-            _codeWriter.Write(Opcodes.OpLoadConst);
-            _codeWriter.Write(_constantsWriter.AddConstant(number));
+            codeWriter.Write(Opcodes.OpLoadConst);
+            codeWriter.Write(_constantsWriter.AddConstant(number));
         }
         else if (expression.IsString)
         {
-            _codeWriter.Write(Opcodes.OpLoadConst);
-            _codeWriter.Write(_constantsWriter.AddConstant(_constantsWriter.AddConstant(expression.Lexeme)));
+            codeWriter.Write(Opcodes.OpLoadConst);
+            codeWriter.Write(_constantsWriter.AddConstant(_constantsWriter.AddConstant(expression.Lexeme)));
         }
         else
         {
@@ -60,8 +58,8 @@ public sealed class Translator : ExpressionVisitor
             if (variable is null)
                 throw new CompilerException($"Undeclared variable {expression.Lexeme}", expression.Range);
             
-            _codeWriter.Write(Opcodes.OpLocalLoad);
-            
+            codeWriter.Write(Opcodes.OpLocalLoad);
+            codeWriter.Write(_currentContext.GetVariableID(variable));
         }
     }
     
