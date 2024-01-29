@@ -35,7 +35,7 @@ public sealed class ConstantsWriter
 
         return id;
     }
-
+    
     public ushort AddConstant(string value)
     {
         ushort id;
@@ -56,7 +56,7 @@ public sealed class ConstantsWriter
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream);
-
+        
         foreach (var (_, value) in _constants)
         {
             switch (value)

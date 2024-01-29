@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "Compiler\Compil
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LanguageParser", "LanguageParser\LanguageParser.csproj", "{5EE2B37B-1499-4306-85DF-A95C6D292265}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler2", "Compiler2\Compiler2.csproj", "{7179EA7F-FEFA-4D71-ABAC-0817B939A2BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{5EE2B37B-1499-4306-85DF-A95C6D292265}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EE2B37B-1499-4306-85DF-A95C6D292265}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5EE2B37B-1499-4306-85DF-A95C6D292265}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7179EA7F-FEFA-4D71-ABAC-0817B939A2BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7179EA7F-FEFA-4D71-ABAC-0817B939A2BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7179EA7F-FEFA-4D71-ABAC-0817B939A2BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7179EA7F-FEFA-4D71-ABAC-0817B939A2BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

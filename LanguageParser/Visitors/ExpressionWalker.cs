@@ -109,4 +109,18 @@ public abstract class ExpressionWalker : ExpressionVisitor
         foreach (var element in expression.Elements)
             Visit(element);
     }
+
+    public override void VisitReturn(ReturnExpression expression)
+    {
+        if (expression.ReturnValue is not null) 
+            Visit(expression.ReturnValue);
+    }
+
+    public override void VisitFunctionDeclaration(FunctionDeclarationExpression expression)
+    {
+        foreach (var parameter in expression.Parameters) 
+            Visit(parameter);
+        
+        Visit(expression.Body);
+    }
 }
