@@ -59,6 +59,13 @@ public sealed class VariableAlreadyDeclaredException : SyntaxException
     }
 }
 
+public sealed class FunctionAlreadyDeclaredException : SyntaxException
+{
+    public FunctionAlreadyDeclaredException(string functionName, StringRange range) : base($"Function already declared in this scope. {functionName}", range)
+    {
+    }
+}
+
 public sealed class UnexpectedExpressionException : SyntaxException
 {
     public UnexpectedExpressionException(ExpressionBase expression) : base("Unexpected expression", expression.Range)

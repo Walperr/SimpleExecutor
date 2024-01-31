@@ -4,15 +4,15 @@ public sealed record Type
 {
     public required string Name { get; init; }
 
-    public required ushort ID { get; init; }
+    public required int ID { get; init; }
 
     public required bool IsPrimitive { get; init; }
 
     public required PrimitiveType PrimitiveType { get; init; }
 
-    public required Type[] Fields { get; init; }
+    public required Variable[] Fields { get; init; }
 
-    public required uint Size { get; init; }
+    public required int Size { get; init; }
 
     public required bool IsGenericType { get; init; }
 
@@ -42,7 +42,7 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Boolean,
         Size = 1,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
     };
 
@@ -53,7 +53,7 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Byte,
         Size = 1,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
     };
 
@@ -64,7 +64,7 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Int16,
         Size = 2,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
     };
 
@@ -75,7 +75,7 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Int32,
         Size = 4,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
     };
 
@@ -86,7 +86,7 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Int64,
         Size = 8,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
     };
 
@@ -97,7 +97,7 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Single,
         Size = 4,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
     };
 
@@ -108,18 +108,18 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Double,
         Size = 8,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
     };
 
     public static readonly Type Array = new()
     {
         Name = "Array",
-        ID = (byte)PrimitiveType.Array,
+        ID = (byte) PrimitiveType.Array,
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Array,
-        Size = 6,
-        Fields = new[] { Int16, Int32 },
+        Size = 8,
+        Fields = new[] {new Variable(Int32, "genericType"), new Variable(Int32, "length")},
         IsGenericType = true,
         GenericArgument = null
     };
@@ -131,20 +131,25 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.String,
         Size = 4,
-        Fields = new[] { Int32 },
+        Fields = new[] { new Variable(Int32, "length") },
         IsGenericType = false
     };
 
     public static readonly Type Struct = new()
     {
         Name = "Struct",
-        ID = (byte)PrimitiveType.Struct,
+        ID = (byte) PrimitiveType.Struct,
         IsPrimitive = false,
         PrimitiveType = PrimitiveType.Struct,
-        Size = 17,
+        Size = 18,
         Fields = new[]
         {
-            Int16, Byte, Byte, Int32, Int32, Int32
+            new Variable(Int32, "id"),
+            new Variable(Boolean, "isPrimitive"),
+            new Variable(Byte, "primitiveType"),
+            new Variable(Int32, "fields"),
+            new Variable(Int32, "fieldsCount"),
+            new Variable(Int32, "size")
         },
         IsGenericType = false
     };
@@ -156,7 +161,19 @@ public static class PrimitiveTypes
         IsPrimitive = true,
         PrimitiveType = PrimitiveType.Struct,
         Size = 0,
-        Fields = System.Array.Empty<Type>(),
+        Fields = System.Array.Empty<Variable>(),
         IsGenericType = false
+    };
+
+    public static readonly Type None = new()
+    {
+        Name = "None",
+        ID = int.MaxValue,
+        PrimitiveType = PrimitiveType.Struct,
+        Size = 0,
+        Fields = System.Array.Empty<Variable>(),
+        IsGenericType = false,
+        IsPrimitive = false,
+        GenericArgument = null
     };
 }

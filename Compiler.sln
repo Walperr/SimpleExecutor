@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "Compiler\Compiler.csproj", "{65B0231F-816B-4304-9E71-8C0012A2E8A8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LanguageParser", "LanguageParser\LanguageParser.csproj", "{5EE2B37B-1499-4306-85DF-A95C6D292265}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler2", "Compiler2\Compiler2.csproj", "{7179EA7F-FEFA-4D71-ABAC-0817B939A2BD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "Compiler\Compiler.csproj", "{7179EA7F-FEFA-4D71-ABAC-0817B939A2BD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,10 +10,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{65B0231F-816B-4304-9E71-8C0012A2E8A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{65B0231F-816B-4304-9E71-8C0012A2E8A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{65B0231F-816B-4304-9E71-8C0012A2E8A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{65B0231F-816B-4304-9E71-8C0012A2E8A8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5EE2B37B-1499-4306-85DF-A95C6D292265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5EE2B37B-1499-4306-85DF-A95C6D292265}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5EE2B37B-1499-4306-85DF-A95C6D292265}.Release|Any CPU.ActiveCfg = Release|Any CPU

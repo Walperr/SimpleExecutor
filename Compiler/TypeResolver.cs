@@ -1,37 +1,33 @@
-using Compiler.Common;
+using System.Diagnostics;
+using Compiler.Exceptions;
 using LanguageParser.Common;
 using LanguageParser.Expressions;
 using LanguageParser.Visitors;
 
 namespace Compiler;
 
-public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
+public class TypeResolver : ExpressionVisitor<Type?, ValueTuple>
 {
+    private readonly Scope _rootScope;
+    private Function _function;
     private readonly List<SyntaxException> _errors = new();
-    private readonly ScopeNode _rootScope;
-    private FunctionBuilder? _functionBuilder;
 
-    private TypeResolver(ScopeNode rootScope)
+    public TypeResolver(Scope rootScope)
     {
         _rootScope = rootScope;
+        _function = rootScope.Context;
     }
 
-    public static Result<SyntaxException, Type> Resolve(ScopeNode tree, CancellationToken? token = null)
-    {
-        return new TypeResolver(tree).Resolve(token ?? CancellationToken.None);
-    }
+    public static Result<SyntaxException, Type> Resolve(Scope root) => new TypeResolver(root).ResolveTypes();
 
-    public static Result<SyntaxException, Type> Resolve(ScopeNode tree, ExpressionBase expression,
-        CancellationToken? token = null)
-    {
-        return new TypeResolver(tree).Resolve(expression, token ?? CancellationToken.None);
-    }
+    public static Type? Resolve(Scope root, ExpressionBase expression) =>
+        new TypeResolver(root).Visit(expression, default);
 
-    private Result<SyntaxException, Type> Resolve(CancellationToken token)
+    private Result<SyntaxException, Type> ResolveTypes()
     {
         try
         {
-            var type = Visit(_rootScope.Scope, token);
+            var type = Visit(_rootScope.Expression, default);
 
             if (type is null)
                 return _errors.First();
@@ -43,62 +39,37 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return new UnhandledCompilerException(e);
         }
     }
-
-    private Result<SyntaxException, Type> Resolve(ExpressionBase expression, CancellationToken token)
+    
+    private Variable? GetVariable(ExpressionBase expression, string name)
     {
-        try
-        {
-            var type = Visit(expression, token);
+        var scope = ScopeResolver.FindScope(expression, _rootScope.Expression);
 
-            if (type is null)
-                return _errors.First();
+        var node = _rootScope.FindDescendant(node => node.Expression == scope);
 
-            return type;
-        }
-        catch (Exception e)
-        {
-            return new UnhandledCompilerException(e);
-        }
+        var variable = node?.GetVariableIncludingAncestors(name);
+
+        return variable;
     }
 
-    public override Type? VisitConstant(ConstantExpression expression, CancellationToken token)
+    private Function? GetFunction(ExpressionBase expression, string name, IEnumerable<Type> parameters)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
+        var scope = ScopeResolver.FindScope(expression, _rootScope.Expression);
 
-        if (expression.IsBool || expression.Kind == SyntaxKind.Bool)
-            return PrimitiveTypes.Boolean;
-        if (expression.IsNumber || expression.Kind == SyntaxKind.Number)
-            return PrimitiveTypes.Double;
-        if (expression.IsString || expression.Kind == SyntaxKind.String)
-            return PrimitiveTypes.String;
+        var node = _rootScope.FindDescendant(node => node.Expression == scope);
 
-        var variable = GetVariable(expression, expression.Lexeme);
+        var function = node?.GetFunctionIncludingAncestors(name, parameters);
 
-        if (variable is not null)
-            return variable.Type;
-
-        _errors.Add(new UndeclaredVariableException(expression.Lexeme, expression.Range));
-        return null;
+        return function;
     }
 
-    public override Type? VisitBinary(BinaryExpression expression, CancellationToken token)
+    public override Type? VisitBinary(BinaryExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var leftType = Visit(expression.Left, token);
+        var leftType = Visit(expression.Left, state);
 
         if (leftType is null)
             return null;
 
-        var rightType = Visit(expression.Right, token);
+        var rightType = Visit(expression.Right, state);
 
         if (rightType is null)
             return null;
@@ -111,7 +82,10 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             case SyntaxKind.RemainderExpression:
 
                 if (leftType == PrimitiveTypes.Double && rightType == PrimitiveTypes.Double)
+                {
+                    expression.Type = PrimitiveTypes.Double;
                     return PrimitiveTypes.Double;
+                }
 
                 _errors.Add(new IncompatibleOperandsException(expression.Operator));
                 return null;
@@ -119,10 +93,16 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             case SyntaxKind.AddExpression:
 
                 if (leftType == PrimitiveTypes.String || rightType == PrimitiveTypes.String)
+                {
+                    expression.Type = PrimitiveTypes.String;
                     return PrimitiveTypes.String;
+                }
 
                 if (leftType == PrimitiveTypes.Double && rightType == PrimitiveTypes.Double)
+                {
+                    expression.Type = PrimitiveTypes.Double;
                     return PrimitiveTypes.Double;
+                }
 
                 if (leftType == PrimitiveTypes.Boolean || rightType == PrimitiveTypes.Boolean)
                 {
@@ -136,7 +116,10 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             case SyntaxKind.RelationalExpression:
 
                 if (leftType == PrimitiveTypes.Double && rightType == PrimitiveTypes.Double)
+                {
+                    expression.Type = PrimitiveTypes.Boolean;
                     return PrimitiveTypes.Boolean;
+                }
 
                 _errors.Add(new IncompatibleOperandsException(expression.Operator, PrimitiveTypes.Double));
                 return null;
@@ -145,7 +128,10 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             case SyntaxKind.OrExpression:
 
                 if (leftType == PrimitiveTypes.Boolean && rightType == PrimitiveTypes.Boolean)
+                {
+                    expression.Type = PrimitiveTypes.Boolean;
                     return PrimitiveTypes.Boolean;
+                }
 
                 _errors.Add(new IncompatibleOperandsException(expression.Operator, PrimitiveTypes.Boolean));
                 return null;
@@ -167,20 +153,26 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
                         _errors.Add(new UndeclaredVariableException(constant.Lexeme, expression.Range));
                         return null;
                     }
+                    
+                    Debug.Assert(variable.Type != PrimitiveTypes.None);
 
-                    if (variable.Type != rightType || variable.Type.GenericArgument != rightType.GenericArgument)
+                    if (variable.Type != rightType/* || variable.Type.GenericArgument != rightType.GenericArgument*/)
                     {
                         _errors.Add(new ExpectedOtherTypeException(expression.Right, rightType, variable.Type));
                         return null;
                     }
 
+                    expression.Type = variable.Type;
                     return variable.Type;
                 }
 
-                if (expression.Left is ElementAccessExpression { IsElementAccessor: true, Elements.Length: 1 })
+                if (expression.Left is ElementAccessExpression {IsElementAccessor: true, Elements.Length: 1})
                 {
                     if (leftType == rightType)
+                    {
+                        expression.Type = leftType;
                         return leftType;
+                    }
 
                     _errors.Add(new IncompatibleOperandsException(expression.Operator, leftType));
                     return null;
@@ -188,24 +180,60 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
 
                 break;
             case SyntaxKind.EqualityExpression:
+            {
+                expression.Type = PrimitiveTypes.Boolean;
                 return PrimitiveTypes.Boolean;
+            }
         }
 
         _errors.Add(new CompilerException($"Unknown operator {expression.Operator.Lexeme}", expression.Range));
         return null;
     }
 
-    public override Type? VisitFor(ForExpression expression, CancellationToken token)
+    public override Type? VisitConstant(ConstantExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
+        if (expression.IsBool || expression.Kind == SyntaxKind.Bool)
         {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
+            expression.Type = PrimitiveTypes.Boolean;
+            return PrimitiveTypes.Boolean;
+        }
+        if (expression.IsNumber || expression.Kind == SyntaxKind.Number)
+        {
+            expression.Type = PrimitiveTypes.Double;
+            return PrimitiveTypes.Double;
+        }
+        if (expression.IsString || expression.Kind == SyntaxKind.String)
+        {
+            expression.Type = PrimitiveTypes.String;
+            return PrimitiveTypes.String;
         }
 
-        var conditionType = expression.Condition is null
-            ? PrimitiveTypes.Boolean
-            : Visit(expression.Condition, token);
+        var variable = GetVariable(expression, expression.Lexeme);
+
+        Debug.Assert(variable?.Type != PrimitiveTypes.None);
+        
+        if (variable is not null)
+        {
+            expression.Type = variable.Type;
+            return variable.Type;
+        }
+
+        _errors.Add(new UndeclaredVariableException(expression.Lexeme, expression.Range));
+        return null;
+    }
+
+    public override Type? VisitFor(ForExpression expression, ValueTuple state)
+    {
+        if (expression.Initialization is not null)
+        {
+            var initializeType = Visit(expression.Initialization, state);
+            if (initializeType is null)
+                return null;
+        }
+
+        var conditionType = expression.Condition is null 
+            ? PrimitiveTypes.Boolean 
+            : Visit(expression.Condition, state);
 
         if (conditionType is null)
             return null;
@@ -216,21 +244,26 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        return Visit(expression.Body, token);
-    }
-
-    public override Type? VisitForTo(ForToExpression expression, CancellationToken token)
-    {
-        if (token.IsCancellationRequested)
+        if (expression.Step is not null)
         {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
+            var stepType = Visit(expression.Step, state);
+            if (stepType is null)
+                return null;
         }
 
-        var varType = Visit(expression.Variable, token);
+        var type = Visit(expression.Body, state);
+        expression.Type = type;
+        return type;
+    }
+
+    public override Type? VisitForTo(ForToExpression expression, ValueTuple state)
+    {
+        var varType = Visit(expression.Variable, state);
 
         if (varType is null)
             return null;
+        
+        Debug.Assert(varType != PrimitiveTypes.None);
 
         if (varType != PrimitiveTypes.Double)
         {
@@ -238,7 +271,7 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        var countType = Visit(expression.Count, token);
+        var countType = Visit(expression.Count, state);
 
         if (countType is null)
             return null;
@@ -249,27 +282,25 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        return Visit(expression.Body, token);
+        var type = Visit(expression.Body, state);
+        expression.Type = type;
+        return type;
     }
 
-    public override Type? VisitForIn(ForInExpression expression, CancellationToken token)
+    public override Type? VisitForIn(ForInExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var varType = Visit(expression.Variable, token);
+        var varType = Visit(expression.Variable, state);
 
         if (varType is null)
             return null;
+        
+        Debug.Assert(varType != PrimitiveTypes.None);
 
-        var arrayType = Visit(expression.Collection, token);
+        var arrayType = Visit(expression.Collection, state);
         if (arrayType is null)
             return null;
 
-        if (arrayType.PrimitiveType == PrimitiveType.Array)
+        if (arrayType.PrimitiveType != PrimitiveType.Array)
         {
             _errors.Add(new CompilerException("Expected array with specified data type", expression.Collection.Range));
             return null;
@@ -278,27 +309,23 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         if (arrayType.GenericArgument is null)
         {
             _errors.Add(new UnhandledCompilerException(new Exception("Array with no generic type")));
-            return null;
+            return null;   
         }
-
+        
         if (arrayType.GenericArgument != varType)
         {
             _errors.Add(new ExpectedOtherTypeException(expression.Variable, varType, arrayType.GenericArgument));
             return null;
         }
 
-        return Visit(expression.Body, token);
+        var type = Visit(expression.Body, state);
+        expression.Type = type;
+        return type;
     }
 
-    public override Type? VisitIf(IfExpression expression, CancellationToken token)
+    public override Type? VisitIf(IfExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var conditionType = Visit(expression.Condition, token);
+        var conditionType = Visit(expression.Condition, state);
 
         if (conditionType is null)
             return null;
@@ -309,13 +336,13 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        var type = Visit(expression.ThenBranch, token);
+        var type = Visit(expression.ThenBranch, state);
 
         if (type is null)
             return null;
 
         var elseType = expression.ElseBranch is not null
-            ? Visit(expression.ElseBranch, token)
+            ? Visit(expression.ElseBranch, state)
             : type;
 
         if (elseType is null)
@@ -327,66 +354,58 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
+        expression.Type = type;
         return type;
     }
 
-    public override Type? VisitInvocation(InvocationExpression expression, CancellationToken token)
+    public override Type? VisitInvocation(InvocationExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
         if (expression.Function is not ConstantExpression constant)
         {
             _errors.Add(new CompilerException("expected function name", expression.Function.Range));
             return null;
         }
-
+        
         var argTypes = new List<Type>();
-
+        
         foreach (var argument in expression.Arguments)
         {
-            var type = Visit(argument, token);
+            var type = Visit(argument, state);
 
             if (type is null)
                 return null;
 
             argTypes.Add(type);
         }
-
+        
         var function = GetFunction(expression, constant.Lexeme, argTypes);
-
+        
         if (function is not null)
         {
-            if (function.ReturnType is null)
+            if (function.ReturnType == PrimitiveTypes.None)
             {
-                _errors.Add(new CompilerException($"{function.Name} return type is null", expression.Range));
+                _errors.Add(new CompilerException($"{function.Name} return type is missing", expression.Range));
                 return null;
             }
 
+            expression.Type = function.ReturnType;
             return function.ReturnType;
         }
-
+        
         _errors.Add(new UndeclaredFunctionException(constant.Lexeme, constant.Range));
         return null;
     }
 
-    public override Type? VisitParenthesized(ParenthesizedExpression expression, CancellationToken token)
+    public override Type? VisitParenthesized(ParenthesizedExpression expression, ValueTuple state)
     {
-        return Visit(expression.Expression, token);
+        var type = Visit(expression.Expression, state);
+        expression.Type = type;
+        return type;
     }
 
-    public override Type? VisitRepeat(RepeatExpression expression, CancellationToken token)
+    public override Type? VisitRepeat(RepeatExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var countType = Visit(expression.CountExpression, token);
+        var countType = Visit(expression.CountExpression, state);
 
         if (countType is null)
             return null;
@@ -394,26 +413,22 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         if (countType != PrimitiveTypes.Double)
         {
             _errors.Add(new ExpectedOtherTypeException(expression.CountExpression, countType, PrimitiveTypes.Double));
-            return null;
+            return null;            
         }
 
-        return Visit(expression.Body, token);
+        var type = Visit(expression.Body, state);
+        expression.Type = type;
+        return type;
     }
 
-    public override Type? VisitScope(ScopeExpression expression, CancellationToken token)
+    public override Type? VisitScope(ScopeExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
         var type = PrimitiveTypes.Empty;
 
         foreach (var innerExpression in expression.InnerExpressions.OrderBy(e =>
                      e is FunctionDeclarationExpression ? 0 : 1))
         {
-            var result = Visit(innerExpression, token);
+            var result = Visit(innerExpression, state);
 
             if (result is null)
                 return null;
@@ -421,17 +436,12 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             type = result;
         }
 
+        expression.Type = type;
         return type;
     }
 
-    public override Type? VisitVariable(VariableExpression expression, CancellationToken token)
+    public override Type? VisitVariable(VariableExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
         var name = expression.NameToken.Lexeme;
 
         var variable = GetVariable(expression, name);
@@ -442,11 +452,45 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
+        if (variable.Type == PrimitiveTypes.None)
+        {
+            Type? type;
+            switch (expression.TypeExpression)
+            {
+                case ConstantExpression {IsTypeKeyword: true} constant:
+                    type = constant.Kind switch
+                    {
+                        SyntaxKind.Number => PrimitiveTypes.Double,
+                        SyntaxKind.String => PrimitiveTypes.String,
+                        SyntaxKind.Bool => PrimitiveTypes.Boolean,
+                        _ => throw new UnexpectedTokenException(constant.Token)
+                    };
+
+                    variable.Type = type;
+                    break;
+
+                case ElementAccessExpression {IsArrayDeclaration: true} array:
+                    var genericType = array.Expression.Kind switch
+                    {
+                        SyntaxKind.Number => PrimitiveTypes.Double,
+                        SyntaxKind.String => PrimitiveTypes.String,
+                        SyntaxKind.Bool => PrimitiveTypes.Boolean,
+                        _ => throw new UnexpectedTokenException(array.OpenBracket)
+                    };
+                    type = PrimitiveTypes.Array with {GenericArgument = genericType};
+                    variable.Type = type;
+                    break;
+
+                default:
+                    throw new UnexpectedExpressionException(expression.TypeExpression);
+            }
+        }
+
         var assignmentType = variable.Type;
 
         if (expression.AssignmentExpression is not null)
         {
-            var result = Visit(expression.AssignmentExpression, token);
+            var result = Visit(expression.AssignmentExpression, state);
 
             if (result is null)
                 return null;
@@ -461,18 +505,13 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
+        expression.Type = variable.Type;
         return variable.Type;
     }
-
-    public override Type? VisitWhile(WhileExpression expression, CancellationToken token)
+    
+    public override Type? VisitWhile(WhileExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var conditionType = Visit(expression.Condition, token);
+        var conditionType = Visit(expression.Condition, state);
 
         if (conditionType is null)
             return null;
@@ -483,37 +522,30 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        return Visit(expression.Body, token);
+        var type = Visit(expression.Body, state);
+        expression.Type = type;
+        return type;
     }
 
-    public override Type? VisitPrefixUnary(PrefixUnaryExpression expression, CancellationToken token)
+    public override Type? VisitPrefixUnary(PrefixUnaryExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var type = Visit(expression.Operand, token);
+        var type = Visit(expression.Operand, state);
 
         if (type is null)
             return null;
 
         if (type == PrimitiveTypes.Double)
+        {
+            expression.Type = PrimitiveTypes.Double;
             return PrimitiveTypes.Double;
+        }
 
         _errors.Add(new CompilerException("Left operand of prefix expression must be number", expression.Range));
         return null;
     }
 
-    public override Type? VisitPostfixUnary(PostfixUnaryExpression expression, CancellationToken token)
+    public override Type? VisitPostfixUnary(PostfixUnaryExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
         var variable = GetVariable(expression, expression.Operand.Lexeme);
 
         if (variable is null)
@@ -523,59 +555,61 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
         }
 
         if (variable.Type == PrimitiveTypes.Double)
+        {
+            expression.Type = PrimitiveTypes.Double;
             return PrimitiveTypes.Double;
+        }
 
         _errors.Add(new CompilerException("Right operand of postfix expression must be number", expression.Range));
         return null;
     }
 
-    public override Type? VisitElementAccess(ElementAccessExpression expression, CancellationToken token)
+    public override Type? VisitElementAccess(ElementAccessExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var type = Visit(expression.Expression, token);
+        var type = Visit(expression.Expression, state);
 
         if (type is null)
             return null;
 
         if (expression.IsArrayDeclaration || expression.IsArrayConstructor)
-            return PrimitiveTypes.Array with { GenericArgument = type };
+        {
+            var typeResult = PrimitiveTypes.Array with { GenericArgument = type };
+            expression.Type = typeResult;
+            return typeResult;
+        }
 
         if (expression.Elements.Length != 1)
         {
             _errors.Add(new CompilerException("Array indexer must contain only 1 index", expression.Range));
             return null;
         }
-
-        var indexType = Visit(expression.Elements[0], token);
+        
+        var indexType = Visit(expression.Elements[0], state);
 
         if (indexType == PrimitiveTypes.Double)
-            return PrimitiveTypes.Array with { GenericArgument = PrimitiveTypes.Double };
-
+        {
+            var typeResult = PrimitiveTypes.Array with { GenericArgument = PrimitiveTypes.Double };
+            expression.Type = typeResult;
+            return typeResult;
+        }
+        
         _errors.Add(new CompilerException("Array indexer must be number", expression.Elements[0].Range));
         return null;
     }
 
-    public override Type? VisitArrayInitialization(ArrayInitializationExpression expression, CancellationToken token)
+    public override Type? VisitArrayInitialization(ArrayInitializationExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
+        if (expression.Elements.IsDefaultOrEmpty)
         {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
+            _errors.Add(new CompilerException("Expected elements of array", expression.Range));
             return null;
         }
-
-        if (expression.Elements.IsDefaultOrEmpty)
-            return PrimitiveTypes.Empty;
-
-        var type = Visit(expression.Elements[0], token);
+        
+        var type = Visit(expression.Elements[0], state);
 
         foreach (var element in expression.Elements)
         {
-            if (type == Visit(element, token))
+            if (type == Visit(element, state))
                 continue;
 
             _errors.Add(new CompilerException("Array cannot contain elements of different types",
@@ -584,106 +618,74 @@ public sealed class TypeResolver : ExpressionVisitor<Type?, CancellationToken>
             return null;
         }
 
-        return PrimitiveTypes.Array with { GenericArgument = PrimitiveTypes.Double };
+        var result = PrimitiveTypes.Array with { GenericArgument = type };
+        expression.Type = result;
+        return result;
     }
 
-    public override Type? VisitReturn(ReturnExpression expression, CancellationToken token)
+    public override Type? VisitReturn(ReturnExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var type = expression.ReturnValue is null ? PrimitiveTypes.Empty : Visit(expression.ReturnValue, token);
+        var type = expression.ReturnValue is null ? PrimitiveTypes.Empty : Visit(expression.ReturnValue, state);
 
         if (type is null)
             return null;
 
-        if (_functionBuilder is null)
-        {
-            _errors.Add(new CompilerException("return cannot be used outside function body", expression.Range));
-            return null;
-        }
-
         try
         {
-            _functionBuilder?.SetReturnType(type);
+            _function.SetReturnType(type);
         }
         catch
         {
-            _errors.Add(new CompilerException("function must have only 1 return type", expression.Range));
+            _errors.Add(new CompilerException("function must return values of the same type", expression.Range));
             return null;
         }
 
+        expression.Type = type;
         return type;
     }
 
-    public override Type? VisitFunctionDeclaration(FunctionDeclarationExpression expression, CancellationToken token)
+    public override Type? VisitFunctionDeclaration(FunctionDeclarationExpression expression, ValueTuple state)
     {
-        if (token.IsCancellationRequested)
-        {
-            _errors.Add(new CompilerException("Operation was cancelled", default));
-            return null;
-        }
-
-        var functionBuilder = _functionBuilder;
+        var function = _function;
 
         var parameters = new List<Type>();
 
         foreach (var parameter in expression.Parameters)
         {
-            var type = Visit(parameter, token);
+            var type = Visit(parameter, state);
+            
             if (type is null)
                 return null;
 
             parameters.Add(type);
         }
 
-        _functionBuilder = GetFunction(expression, expression.NameToken.Lexeme, parameters);
+        _function = GetFunction(expression, expression.NameToken.Lexeme, parameters) ??
+                    throw new UnhandledCompilerException(
+                        new Exception($"Function not found {expression.NameToken.Lexeme}"));
 
         try
         {
-            var type = Visit(expression.Body, token);
+            var type = Visit(expression.Body, state);
             if (type is null)
                 return null;
 
             try
             {
-                _functionBuilder!.SetReturnType(type);
+                _function.SetReturnType(type);
             }
-            catch (Exception e)
+            catch
             {
-                _errors.Add(new CompilerException(e.Message, expression.Range));
+                _errors.Add(new CompilerException("function must return values of the same type", expression.Range));
+                return null;
             }
 
+            expression.Type = PrimitiveTypes.Empty;
             return PrimitiveTypes.Empty;
         }
         finally
         {
-            _functionBuilder = functionBuilder;
+            _function = function;
         }
-    }
-
-    private Variable? GetVariable(ExpressionBase expression, string name)
-    {
-        var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
-
-        var node = _rootScope.FindDescendant(node => node.Scope == scope);
-
-        var variable = node?.GetVariableIncludingAncestors(name);
-
-        return variable;
-    }
-
-    private FunctionBuilder? GetFunction(ExpressionBase expression, string name, IEnumerable<Type> parameters)
-    {
-        var scope = ScopeResolver.FindScope(expression, _rootScope.Scope);
-
-        var node = _rootScope.FindDescendant(node => node.Scope == scope);
-
-        var function = node?.GetFunctionIncludingAncestors(name, parameters);
-
-        return function;
     }
 }

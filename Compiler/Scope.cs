@@ -1,6 +1,6 @@
 using LanguageParser.Expressions;
 
-namespace Compiler2;
+namespace Compiler;
 
 public class Scope
 {
@@ -18,7 +18,7 @@ public class Scope
 
     public Scope? Parent { get; }
 
-    public IReadOnlyList<Scope> Children => _children;
+    public IEnumerable<Scope> Children => _children;
     public ScopeExpression Expression { get; }
     public Function Context { get; }
 

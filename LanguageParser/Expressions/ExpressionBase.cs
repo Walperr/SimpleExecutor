@@ -8,6 +8,8 @@ namespace LanguageParser.Expressions;
 
 public abstract class ExpressionBase : ISyntaxElement
 {
+    private object? _type;
+
     private protected ExpressionBase(SyntaxKind kind)
     {
         Kind = kind;
@@ -40,6 +42,19 @@ public abstract class ExpressionBase : ISyntaxElement
                 null => ImmutableArray<Token>.Empty,
                 _ => ((Token)element).TrailingTrivia
             };
+        }
+    }
+
+    //todo: should be Type
+    public object? Type
+    {
+        get => _type;
+        set
+        {
+            if (_type is not null && _type != value)
+                throw new InvalidOperationException("Cannot change type of expression");
+            
+            _type = value;
         }
     }
 

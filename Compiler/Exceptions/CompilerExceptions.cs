@@ -2,7 +2,7 @@ using LanguageParser.Common;
 using LanguageParser.Expressions;
 using LanguageParser.Interfaces;
 
-namespace Compiler.Common;
+namespace Compiler.Exceptions;
 
 public class CompilerException : SyntaxException
 {

@@ -4,11 +4,15 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\LanguageParser\LanguageParser.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Reactive" Version="6.0.0" />
     </ItemGroup>
 
 </Project>

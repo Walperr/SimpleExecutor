@@ -1,4 +1,4 @@
-namespace Compiler2;
+namespace Compiler;
 
 public record Variable(Type Type, string Name)
 {

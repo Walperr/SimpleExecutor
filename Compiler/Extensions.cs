@@ -1,8 +1,8 @@
-namespace Compiler.Common;
+namespace Compiler;
 
 public static class Extensions
 {
-    public static ScopeNode? FindDescendant(this ScopeNode root, Func<ScopeNode, bool> predicate)
+    public static Scope? FindDescendant(this Scope root, Func<Scope, bool> predicate)
     {
         if (predicate(root))
             return root;

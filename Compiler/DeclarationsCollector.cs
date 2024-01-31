@@ -4,109 +4,79 @@ using LanguageParser.Visitors;
 
 namespace Compiler;
 
-public sealed class DeclarationsCollector : ExpressionWalker
+public class DeclarationsCollector : ExpressionWalker
 {
     private readonly ExpressionBase _expression;
-    private ScopeNode? _currentNode;
-    private FunctionBuilder _functionBuilder;
-    private ScopeNode? _root;
-    private ushort _totalFunctions;
+    private Function _currentFunction;
+    private Scope? _currentScope;
+    private Scope? _root;
+    private readonly List<SyntaxException> _errors = new();
+    private int _totalFunctions;
 
     private DeclarationsCollector(ExpressionBase expression)
     {
-        _functionBuilder = new FunctionBuilder(".main", 0);
-        _functionBuilder.SetID(_totalFunctions++);
-        _functionBuilder.SetReturnType(PrimitiveTypes.Empty);
         _expression = expression;
+        _currentFunction = new Function(".main", _totalFunctions++, 0);
+        _currentFunction.SetReturnType(PrimitiveTypes.Empty);
     }
 
-    public static ScopeNode? Collect(ExpressionBase expression)
-    {
-        return new DeclarationsCollector(expression).Collect();
-    }
+    public static Scope? Collect(ExpressionBase expression) => new DeclarationsCollector(expression).Collect();
 
-    public ScopeNode? Collect()
+    private Scope? Collect()
     {
         Visit(_expression);
-        _root!.AddFunction(_functionBuilder);
+
+        if (_errors.Count > 0)
+            return null;
+
         return _root;
     }
 
     public override void VisitScope(ScopeExpression expression)
     {
-        var node = new ScopeNode(expression, _currentNode);
+        var scope = new Scope(_currentScope, _currentFunction, expression);
 
-        _currentNode?.Children.Add(node);
+        _currentScope?.AddScope(scope);
 
-        var currentNode = _currentNode;
+        var currentScope = _currentScope;
 
-        _currentNode = node;
-
-        _root ??= _currentNode;
-
+        _currentScope = scope;
+        _root ??= _currentScope;
+        
         base.VisitScope(expression);
 
-        _currentNode = currentNode;
+        _currentScope = currentScope;
     }
 
     public override void VisitVariable(VariableExpression expression)
     {
         var name = expression.NameToken.Lexeme;
 
-        switch (expression.TypeExpression)
+        var variable = new Variable(PrimitiveTypes.None, name);
+        if (!_currentScope?.AddVariable(variable) ?? true)
         {
-            case ConstantExpression { IsTypeKeyword: true } constant: // is simple variable
-            {
-                var variable = constant.Kind switch
-                {
-                    SyntaxKind.Number => PrimitiveTypes.Double,
-                    SyntaxKind.String => PrimitiveTypes.String,
-                    SyntaxKind.Bool => PrimitiveTypes.Boolean,
-                    _ => throw new UnexpectedTokenException(constant.Token)
-                };
-
-                if (!(_currentNode?.AddVariable(variable, name) ?? true))
-                    throw new VariableAlreadyDeclaredException(name, expression.Range);
-
-                _functionBuilder.AddVariable(variable, name);
-                break;
-            }
-            case ElementAccessExpression { IsArrayDeclaration: true }: // is array
-            {
-                var variable = PrimitiveTypes.Array;
-
-                if (!(_currentNode?.AddVariable(variable, name) ?? true))
-                    throw new VariableAlreadyDeclaredException(name, expression.Range);
-                _functionBuilder.AddVariable(variable, name);
-                break;
-            }
-            default:
-                throw new UnexpectedExpressionException(expression.TypeExpression);
+            _errors.Add(new VariableAlreadyDeclaredException(name, expression.NameToken.Range));
+            return;
         }
-
+        _currentFunction.AddVariable(variable);
+        
         base.VisitVariable(expression);
     }
 
     public override void VisitFunctionDeclaration(FunctionDeclarationExpression expression)
     {
-        var functionName = expression.FunctionToken.Lexeme;
-
-        var functionBuilder = _functionBuilder;
-
-        _functionBuilder = new FunctionBuilder(functionName, expression.Parameters.Count());
-        _functionBuilder.SetID(_totalFunctions++);
-
-        foreach (var parameter in expression.Parameters)
+        var name = expression.NameToken.Lexeme;
+        var function = _currentFunction;
+        _currentFunction = new Function(name, _totalFunctions++, expression.Parameters.Count());
+        
+        if (!_currentScope?.AddFunction(_currentFunction) ?? true)
         {
-            if (parameter is not VariableExpression variable)
-                throw new UnexpectedExpressionException(parameter);
-
-            VisitVariable(variable);
+            _errors.Add(new FunctionAlreadyDeclaredException(name, expression.NameToken.Range));
+            return;
         }
+        
+        base.VisitFunctionDeclaration(expression);
 
-        Visit(expression.Body);
-
-        _currentNode?.AddFunction(_functionBuilder);
-        _functionBuilder = functionBuilder;
+        _currentFunction = function;
     }
 }
