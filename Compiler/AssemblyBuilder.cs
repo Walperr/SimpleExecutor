@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reactive.Disposables;
 using System.Text;
@@ -8,17 +9,24 @@ namespace Compiler;
 
 public class AssemblyBuilder
 {
+    private readonly string _name;
+    private readonly Version _version;
+    private readonly string _developer;
     private readonly Dictionary<Function, ByteCodeBuilder> _builders = new();
     private readonly SortedList<int, object> _constants = new();
 
     private readonly Stack<Function> _contextStack = new();
 
     private readonly Dictionary<Function, List<Marker>> _markers = new();
-    private readonly List<Type> _types = new();
+    private readonly HashSet<Type> _types = new();
     private Function? _context;
 
-    public AssemblyBuilder()
+    public AssemblyBuilder(string name, string? developer = null, Version? version = null)
     {
+        _name = name;
+        _developer = developer ?? "default company";
+        _version = version ?? new Version(0, 0, 0, 0);
+
         _types.Add(PrimitiveTypes.Struct);
         _types.Add(PrimitiveTypes.Boolean);
         _types.Add(PrimitiveTypes.Byte);
@@ -124,7 +132,7 @@ public class AssemblyBuilder
 
     private ByteCodeBuilder GetBuilder()
     {
-        return _builders.GetValueOrDefault(_context!) ?? (_builders[_context!] = new ByteCodeBuilder());
+        return _builders.GetValueOrDefault(_context!) ?? (_builders[_context!] = new ByteCodeBuilder(this));
     }
 
     public void AddOpLoadVariable(string name)
@@ -329,85 +337,436 @@ public class AssemblyBuilder
         return new Marker(this);
     }
 
-    public (byte[] code, byte[] constants, byte[] types, byte[] functions) Build()
+    public void BuildNew(Stream outStream, bool fixAddresses = false)
     {
-        using var codeStream = new MemoryStream();
-        using var codeWriter = new BinaryWriter(codeStream);
-
-        using var constantsStream = new MemoryStream();
-        using var constantsWriter = new BinaryWriter(constantsStream);
-
-        using var typesStream = new MemoryStream();
-        using var typesWriter = new BinaryWriter(typesStream);
-
-        using var functionsStream = new MemoryStream();
-        using var functionsWriter = new BinaryWriter(functionsStream);
+        using var outWriter = new BinaryWriter(outStream);
         
-        constantsWriter.Write(_constants.Count);
+        outWriter.Write(_name);
+        outWriter.Write(_developer);
+        outWriter.Write(_version.Major);
+        outWriter.Write(_version.Minor);
+        outWriter.Write(_version.Build);
+        outWriter.Write(_version.Revision);
+
+        const int mainEntryPoint = 0;
+        
+        outWriter.Write(mainEntryPoint);
+        
+        outWriter.Write(_constants.Count);
+
+        outWriter.Write(_types.Count);
+
+        const int referencedTypesCount = 0;
+
+        outWriter.Write(referencedTypesCount);
+
+        outWriter.Write(_builders.Count);
+
+        const int referencedFunctionsCount = 0;
+
+        outWriter.Write(referencedFunctionsCount);
+
+        var codeSizePosition = outStream.Position;
+
+        outWriter.Write(default(int)); // reserve for code size
+        outWriter.Write(default(int)); // reserve for constants ptr
+        outWriter.Write(default(int)); // reserve for typedef ptr
+        outWriter.Write(default(int)); // reserve for typeref ptr
+        outWriter.Write(default(int)); // reserve for funcdef ptr
+        outWriter.Write(default(int)); // reserve for funcref ptr
+        outWriter.Write(default(int)); // reserve for code ptr
+
+        var constantsPtr = (int)outStream.Position;
         
         foreach (var (_, value) in _constants)
         {
             switch (value)
             {
                 case bool boolean:
-                    constantsWriter.Write(sizeof(bool));
-                    constantsWriter.Write(boolean);
+                    outWriter.Write(PrimitiveTypes.Boolean.ID);
+                    outWriter.Write(boolean);
                     break;
                 case double @double:
-                    constantsWriter.Write(sizeof(double));
-                    constantsWriter.Write(@double);
+                    outWriter.Write(PrimitiveTypes.Double.ID);
+                    outWriter.Write(@double);
                     break;
                 case string @string:
-                    constantsWriter.Write(@string.Length * sizeof(char));
-                    constantsWriter.Write(@string);
+                    outWriter.Write(PrimitiveTypes.String.ID);
+                    outWriter.Write(@string);
                     break;
             }
         }
 
-        typesWriter.Write(_types.Count);
-        
+        var typedefPtr = (int)outStream.Position;
+
         foreach (var type in _types)
         {
-            typesWriter.Write(type.ID);
-            typesWriter.Write(type.IsPrimitive);
-            typesWriter.Write((byte)type.PrimitiveType);
-            typesWriter.Write(type.Size);
-            typesWriter.Write(type.Fields.Length);
+            outWriter.Write(type.ID);
+            outWriter.Write(string.Empty); // empty namespace
+            outWriter.Write(type.Name);
+            outWriter.Write(type.IsPrimitive);
+            outWriter.Write((byte)type.PrimitiveType);
+            outWriter.Write(type.Size);
+            outWriter.Write(type.Fields.Length);
             foreach (var field in type.Fields)
-                typesWriter.Write(field.Type.ID);
+            {
+                outWriter.Write(field.Type.ID);
+                outWriter.Write(field.Name);
+            }
         }
 
-        codeWriter.Write(Opcodes.OpCall);
-        codeWriter.Write(0);
-        codeWriter.Write(Opcodes.OpHalt);
+        var typerefPtr = (int)outStream.Position;
+        var funcdefPtr = (int)outStream.Position;
+
+        using var stream = new MemoryStream();
+        using var writer = new BinaryWriter(stream);
         
-        var offset = (int)codeStream.Length;
-        
-        functionsWriter.Write(_builders.Count);
+        writer.Write((byte)Opcodes.OpCall);
+        writer.Write(mainEntryPoint);
+        writer.Write((byte)Opcodes.OpHalt);
 
         foreach (var (function, builder) in _builders.OrderBy(p => p.Key.ID))
         {
-            offset = (int)codeStream.Position;
-            var bytes = builder.Build(offset);
+            var offset = (int)stream.Position;
+            builder.Build(writer, fixAddresses);
 
-            // offset += bytes.Length;
-
-            functionsWriter.Write(function.ID);
-            functionsWriter.Write((int)codeStream.Length);
-            functionsWriter.Write(function.ParametersCount);
-            functionsWriter.Write(function.VariablesCount);
-            foreach (var variable in function.Variables)
-                functionsWriter.Write(variable.Type.ID);
+            outWriter.Write(function.ID);
+            outWriter.Write(string.Empty); // empty namespace
+            outWriter.Write(function.Name);
             
-            codeWriter.Write(bytes);
+            outWriter.Write(offset);
+            
+            outWriter.Write(function.ParametersCount);
+            outWriter.Write(function.VariablesCount);
+            foreach (var variable in function.Variables)
+            {
+                outWriter.Write(variable.Type.ID);
+                outWriter.Write(variable.Name);
+            }
         }
 
-        return (code: codeStream.ToArray(), constants: constantsStream.ToArray(), types: typesStream.ToArray(), functions: functionsStream.ToArray());
+        var funcrefPtr = (int)outStream.Position;
+        var codePtr = (int)outStream.Position;
+
+        outStream.Position = codeSizePosition;
+        outWriter.Write((int)stream.Length);
+        
+        outWriter.Write(constantsPtr);
+        outWriter.Write(typedefPtr);
+        outWriter.Write(typerefPtr);
+        outWriter.Write(funcdefPtr);
+        outWriter.Write(funcrefPtr);
+        outWriter.Write(codePtr);
+
+        outStream.Position = codePtr;
+        stream.Position = 0;
+        
+        stream.CopyTo(outStream);
     }
 
-    public string BuildIlPreview()
+    public static AssemblyBuilder LoadAssembly(Stream stream)
+    {
+        using var reader = new BinaryReader(stream);
+
+        var name = reader.ReadString();
+        var developer = reader.ReadString();
+        var version = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
+
+        var builder = new AssemblyBuilder(name, developer, version);
+
+        var entryPoint = reader.ReadInt32(); // entry point
+
+        var constantsCount = reader.ReadInt32();
+        var typesCount = reader.ReadInt32();
+        var referencedTypesCount = reader.ReadInt32();
+        var functionsCount = reader.ReadInt32();
+        var referencedFunctionsCount = reader.ReadInt32();
+
+        var codeSize = reader.ReadInt32();
+        var constantsPtr = reader.ReadInt32();
+        var typedefPtr = reader.ReadInt32();
+        var typerefPtr = reader.ReadInt32();
+        var funcdefPtr = reader.ReadInt32();
+        var funcrefPtr = reader.ReadInt32();
+        var codePtr = reader.ReadInt32();
+
+        for (int i = 0; i < constantsCount; i++)
+        {
+            var type = reader.ReadInt32();
+
+            if (type == PrimitiveTypes.Boolean.ID) 
+                builder.AddConstant(reader.ReadBoolean());
+            else if (type == PrimitiveTypes.Double.ID)
+                builder.AddConstant(reader.ReadDouble());
+            else if (type == PrimitiveTypes.String.ID)
+                builder.AddConstant(reader.ReadString());
+            else
+                throw new InvalidDataException("Invalid constant type");
+        }
+
+        for (int i = 0; i < typesCount; i++)
+        {
+            var id = reader.ReadInt32();
+            var @namespace = reader.ReadString();
+            var typeName = reader.ReadString();
+            var isPrimitive = reader.ReadBoolean();
+            var primitiveType = reader.ReadByte();
+            var size = reader.ReadInt32();
+            var fieldsCount = reader.ReadInt32();
+
+            var type = new Type
+            {
+                ID = id,
+                Name = typeName,
+                IsPrimitive = isPrimitive,
+                PrimitiveType = (PrimitiveType)primitiveType,
+                Size = size,
+                Fields = new Variable[fieldsCount],
+                IsGenericType = id == PrimitiveTypes.Array.ID
+            };
+
+            for (int j = 0; j < fieldsCount; j++)
+            {
+                var fieldType = reader.ReadInt32();
+                var fieldName = reader.ReadString();
+
+                type.Fields[j] = new Variable(PrimitiveTypes.None with { ID = fieldType }, fieldName);
+            }
+            
+            builder._types.Add(type);
+        }
+
+        var fields = from type in builder._types
+            from field in type.Fields
+            where field.Type.Name == PrimitiveTypes.None.Name
+            select field;
+        
+        foreach (var field in fields)
+            field.Type = builder._types.First(t => t.ID == field.Type.ID);
+
+        var functions = new List<(int ip, Function function)>();
+
+        for (int i = 0; i < functionsCount; i++)
+        {
+            var id = reader.ReadInt32();
+            var @namespace = reader.ReadString();
+            var functionName = reader.ReadString();
+            var ip = reader.ReadInt32();
+            var parametersCount = reader.ReadInt32();
+            var variablesCount = reader.ReadInt32();
+
+            var function = new Function(functionName, id, parametersCount);
+            
+            function.SetReturnType(PrimitiveTypes.None);
+
+            for (int j = 0; j < variablesCount; j++)
+            {
+                var variableType = reader.ReadInt32();
+                var variableName = reader.ReadString();
+
+                function.AddVariable(new Variable(builder._types.First(t => t.ID == variableType), variableName));
+            }
+
+            functions.Add((ip, function));
+        }
+
+        var opCall = reader.ReadByte();
+        var mainID = reader.ReadInt32();
+        var opHalt = reader.ReadByte();
+
+        var address = sizeof(int) + 2 * sizeof(byte);
+
+        if (mainID != entryPoint)
+            throw new InvalidDataException("Wrong entry point");
+
+        for (var i = 0; i < functions.Count; i++)
+        {
+            var (ip, function) = functions[i];
+            var nextIp = i < functionsCount - 1 ? functions[i + 1].ip : codeSize;
+            
+            using var _ = builder.SetContext(function);
+
+            var instructionBuilder = builder.GetBuilder();
+
+            while (address < nextIp)
+            {
+                var opcode = (Opcodes)reader.ReadByte();
+
+                if (opcode is Opcodes.OpCast or Opcodes.OpFieldSet or Opcodes.OpFieldLoad)
+                {
+                    var argument1 = reader.ReadInt32();
+                    var argument2 = reader.ReadInt32();
+                    
+                    instructionBuilder.AddOperation(opcode, argument1, argument2);
+
+                    address += sizeof(byte) + sizeof(int) * 2;
+                }
+                else if (opcode is Opcodes.OpLoadConst or Opcodes.OpLocalLoad or Opcodes.OpLocalSet or Opcodes.OpCall)
+                {
+                    var argument1 = reader.ReadInt32();
+                    
+                    instructionBuilder.AddOperation(opcode, argument1);
+                    
+                    address += sizeof(byte) + sizeof(int);
+                }
+                else if (opcode is Opcodes.OpJump or Opcodes.OpJumpIfFalse or Opcodes.OpJumpIfTrue)
+                {
+                    var argument1 = reader.ReadInt32();
+                    
+                    instructionBuilder.AddOperation(opcode, argument1 - ip - sizeof(int)); //todo: make conversion between address and instruction number
+                    
+                    address += sizeof(byte) + sizeof(int);
+                }
+                else
+                {
+                    instructionBuilder.AddOperation(opcode);
+                    
+                    address += sizeof(byte);
+                }
+            }
+        }
+
+        return builder;
+    }
+    
+    public void Build(Stream outStream)
+    {
+        using var stream = new MemoryStream();
+        using var writer = new BinaryWriter(stream);
+        using var outWriter = new BinaryWriter(outStream);
+        
+        writer.Write(_constants.Count);
+        
+        foreach (var (_, value) in _constants)
+        {
+            switch (value)
+            {
+                case bool boolean:
+                    writer.Write(sizeof(bool));
+                    writer.Write(boolean);
+                    break;
+                case double @double:
+                    writer.Write(sizeof(double));
+                    writer.Write(@double);
+                    break;
+                case string @string:
+                    writer.Write(@string.Length * sizeof(char));
+                    writer.Write(@string);
+                    break;
+            }
+        }
+
+        var constantsSize = (int)stream.Length;
+        
+        writer.Write(_types.Count);
+        
+        foreach (var type in _types)
+        {
+            writer.Write(type.ID);
+            writer.Write(type.IsPrimitive);
+            writer.Write((byte)type.PrimitiveType);
+            writer.Write(type.Size);
+            writer.Write(type.Fields.Length);
+            foreach (var field in type.Fields)
+                writer.Write(field.Type.ID);
+        }
+
+        var typesSize = (int)stream.Position - constantsSize;
+        
+        outWriter.Write(constantsSize);
+        outWriter.Write(typesSize);
+        outWriter.Write(default(int));
+        outWriter.Write(default(int));
+
+        stream.Position = 0;
+        stream.CopyTo(outStream);
+        stream.SetLength(0);
+
+        outWriter.Write(_builders.Count);
+        
+        writer.Write((byte)Opcodes.OpCall);
+        writer.Write(0);
+        writer.Write((byte)Opcodes.OpHalt);
+        
+        foreach (var (function, builder) in _builders.OrderBy(p => p.Key.ID))
+        {
+            var offset = (int)stream.Position;
+            builder.Build(writer, true);
+
+            outWriter.Write(function.ID);
+            outWriter.Write(offset);
+            outWriter.Write(function.ParametersCount);
+            outWriter.Write(function.VariablesCount);
+            foreach (var variable in function.Variables)
+                outWriter.Write(variable.Type.ID);
+        }
+
+
+        var functionsSize = (int)outStream.Position - 4 * sizeof(int) - constantsSize - typesSize;
+
+        outStream.Position = 2 * sizeof(int);
+        outWriter.Write(functionsSize);
+        outWriter.Write(stream.Position);
+
+        stream.Position = 0;
+        outStream.Position = outStream.Length; 
+        stream.CopyTo(outStream);
+    }
+
+    public string Build(bool fixAddresses = false)
     {
         var sb = new StringBuilder();
+
+        const string locals = "locals:";
+        const string byteCode = "code:";
+        
+        foreach (var (function, builder) in _builders.OrderBy(p => p.Key.ID))
+        {
+            sb.Append(function.ID);
+            sb.Append(new[] { ':', '\t' });
+
+            Debug.Assert(function.ReturnType is not null);
+
+            sb.Append(function.ReturnType.Name);
+            sb.Append(' ');
+            sb.Append(function.Name);
+            sb.Append('(');
+
+            for (int i = 0; i < function.ParametersCount; i++)
+            {
+                var parameter = function.Parameters.ElementAt(i);
+
+                sb.Append(parameter.Type.Name);
+                if (i != function.ParametersCount - 1)
+                    sb.Append(',');
+            }
+
+            sb.Append(new[] { ')', '\n' });
+
+            if (function.VariablesCount > 0)
+                sb.AppendLine(locals);
+
+            for (int i = 0; i < function.VariablesCount; i++)
+            {
+                var variable = function.Variables.ElementAt(i);
+
+                sb.Append('\t');
+                sb.Append(i);
+                sb.Append(new[] { ':', ' ' });
+                sb.Append(variable.Type.Name);
+                sb.Append(' ');
+                sb.Append(variable.Name);
+                sb.Append('\n');
+            }
+            
+            sb.Append('\n');
+
+            sb.AppendLine(byteCode);
+            
+            builder.Build(sb, fixAddresses);
+            
+            sb.Append('\n');
+        }
 
         return sb.ToString();
     }
@@ -447,7 +806,7 @@ public class AssemblyBuilder
                 _assemblyBuilder._markers.Remove(_context);
         }
 
-        public void SetOperation(byte opcode)
+        public void SetOperation(Opcodes opcode)
         {
             _builder.InsertOperation(opcode, Value);
 
@@ -455,7 +814,7 @@ public class AssemblyBuilder
                 marker.Value++;
         }
 
-        public void SetOperation(byte opcode, int argument)
+        public void SetOperation(Opcodes opcode, int argument)
         {
             _builder.InsertOperation(opcode, argument, Value);
 
@@ -463,7 +822,7 @@ public class AssemblyBuilder
                 marker.Value++;
         }
 
-        public void SetOperation(byte opcode, int argument1, int argument2)
+        public void SetOperation(Opcodes opcode, int argument1, int argument2)
         {
             _builder.InsertOperation(opcode, argument1, argument2, Value);
 
@@ -474,44 +833,52 @@ public class AssemblyBuilder
 
     private class ByteCodeBuilder
     {
+        private readonly AssemblyBuilder _assemblyBuilder;
         private readonly List<Operation> _operations = new();
+
+        public ByteCodeBuilder(AssemblyBuilder assemblyBuilder)
+        {
+            _assemblyBuilder = assemblyBuilder;
+        }
 
         public int GetMarker()
         {
             return _operations.Count;
         }
 
-        public byte[] Build(int offset)
+        public void Build(BinaryWriter writer, bool fixAddresses = false)
         {
-            using var stream = new MemoryStream();
-            using var writer = new BinaryWriter(stream);
-
             for (var i = 0; i < _operations.Count; i++)
             {
                 var operation = _operations[i];
                 switch (operation)
                 {
                     case { Argument1: null, Argument2: null }:
-                        writer.Write(operation.Opcode);
+                        writer.Write((byte)operation.Opcode);
                         break;
 
                     case { Argument1: not null, Argument2: null }:
-                        writer.Write(operation.Opcode);
+                        writer.Write((byte)operation.Opcode);
                         if (operation.Opcode is Opcodes.OpJump or Opcodes.OpJumpIfFalse or Opcodes.OpJumpIfTrue)
                         {
                             var targetInstruction = operation.Argument1.Value;
-                            var address = (int)stream.Position + offset + 4;
+                            if (!fixAddresses)
+                            {
+                                writer.Write(targetInstruction);
+                                continue;
+                            }
+                            
+                            var address = (int)writer.BaseStream.Position + 4;
                             for (int j = i + 1; j < targetInstruction; j++)
                             {
                                 var op = _operations[j];
-                                address += 1;
+                                address += sizeof(byte);
                                 if (op.Argument1 is not null)
-                                    address += 4;
+                                    address += sizeof(int);
                                 if (op.Argument2 is not null)
-                                    address += 4;
+                                    address += sizeof(int);
                             }
-                            var argument = address;
-                            writer.Write(argument);
+                            writer.Write(address);
                         }
                         else
                         {
@@ -520,71 +887,143 @@ public class AssemblyBuilder
                         break;
 
                     case { Argument1: not null, Argument2: not null }:
-                        writer.Write(operation.Opcode);
+                        writer.Write((byte)operation.Opcode);
                         writer.Write(operation.Argument1.Value);
-                        
-                        if (operation.Opcode is Opcodes.OpCast)
-                            writer.Write(operation.Argument2.Value);
-                        else
-                            writer.Write(operation.Argument2.Value);
+                        writer.Write(operation.Argument2.Value);
                         break;
                 }
             }
-
-            return stream.ToArray();
         }
 
-        public void InsertOperation(byte opcode, int index)
+        public void Build(StringBuilder sb, bool fixAddresses = false)
+        {
+            var curAddress = 0;
+            for (var i = 0; i < _operations.Count; i++)
+            {
+                var operation = _operations[i];
+                
+                sb.Append('\t');
+                sb.Append($"{curAddress:x4}");
+                sb.Append(new[] { ':', ' ' });
+                sb.Append(operation.Opcode.ToString().Replace("Op", string.Empty));
+                sb.Append(new [] {'\t', '\t'});
+
+                curAddress += sizeof(byte);
+
+                if (operation.Argument1 is not null)
+                {
+                    switch (operation.Opcode)
+                    {
+                        case Opcodes.OpLoadConst:
+                            sb.Append(_assemblyBuilder._constants[operation.Argument1.Value]);
+                            break;
+                        case Opcodes.OpLocalLoad or Opcodes.OpLocalSet:
+                        {
+                            var function = _assemblyBuilder._builders.FirstOrDefault(p => p.Value == this).Key;
+                            sb.Append(function.Variables.ElementAt(operation.Argument1.Value).Name);
+                            break;
+                        }
+                        case Opcodes.OpJump or Opcodes.OpJumpIfFalse or Opcodes.OpJumpIfTrue:
+                        {
+                            var targetInstruction = operation.Argument1.Value;
+                            sb.Remove(sb.Length - 1, 1);
+                            if (!fixAddresses)
+                            {
+                                sb.Append($"{targetInstruction:x4}\n");
+                                continue;
+                            }
+
+                            var address = curAddress + sizeof(int);
+                            for (int j = i + 1; j < targetInstruction; j++)
+                            {
+                                var op = _operations[j];
+                                address += sizeof(byte);
+                                if (op.Argument1 is not null)
+                                    address += sizeof(int);
+                                if (op.Argument2 is not null)
+                                    address += sizeof(int);
+                            }
+
+                            sb.Append($"{address:x4}");
+                            
+                            break;
+                        }
+                        case Opcodes.OpCall:
+                        {
+                            var function = _assemblyBuilder._builders
+                                .FirstOrDefault(p => p.Key.ID == operation.Argument1.Value).Key;
+                            sb.Append(function.Name);
+                            break;
+                        }
+                        default:
+                            sb.Append(operation.Argument1);
+                            break;
+                    }
+                    
+                    curAddress += sizeof(int);
+                }
+
+                if (operation.Argument2 is not null)
+                {
+                    sb.Append(operation.Argument2);
+                    curAddress += sizeof(int);
+                }
+
+                sb.Append('\n');
+            }
+        }
+
+        public void InsertOperation(Opcodes opcode, int index)
         {
             _operations.Insert(index, new Operation(opcode));
         }
 
-        public void InsertOperation(byte opcode, int argument, int index)
+        public void InsertOperation(Opcodes opcode, int argument, int index)
         {
             _operations.Insert(index, new Operation(opcode, argument));
         }
 
-        public void InsertOperation(byte opcode, int argument1, int argument2, int index)
+        public void InsertOperation(Opcodes opcode, int argument1, int argument2, int index)
         {
             _operations.Insert(index, new Operation(opcode, argument1, argument2));
         }
 
-        public void AddOperation(byte opcode)
+        public void AddOperation(Opcodes opcode)
         {
             _operations.Add(new Operation(opcode));
         }
 
-        public void AddOperation(byte opcode, int argument)
+        public void AddOperation(Opcodes opcode, int argument)
         {
             _operations.Add(new Operation(opcode, argument));
         }
 
-        public void AddOperation(byte opcode, int argument1, int argument2)
+        public void AddOperation(Opcodes opcode, int argument1, int argument2)
         {
             _operations.Add(new Operation(opcode, argument1, argument2));
         }
 
         public class Operation
         {
-            public Operation(byte opcode)
+            public Operation(Opcodes opcode)
             {
                 Opcode = opcode;
             }
 
-            public Operation(byte opcode, int argument1, int argument2)
+            public Operation(Opcodes opcode, int argument1, int argument2)
             {
                 Opcode = opcode;
                 Argument1 = argument1;
                 Argument2 = argument2;
             }
 
-            public Operation(byte opcode, int argument)
+            public Operation(Opcodes opcode, int argument)
             {
                 Opcode = opcode;
                 Argument1 = argument;
             }
 
-            public byte Opcode { get; }
+            public Opcodes Opcode { get; }
             
             public int? Argument1 { get; }
             
