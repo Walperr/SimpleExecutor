@@ -14,7 +14,7 @@ public class Compiler : ExpressionWalker
     private readonly List<SyntaxException> _errors = new();
     private readonly Scope _root;
     private Function _context;
-    private ScopeExpression? _currentScope;
+    private ExpressionBase? _currentScope;
 
     private Compiler(Scope scope)
     {
@@ -22,7 +22,7 @@ public class Compiler : ExpressionWalker
         _context = scope.Context;
     }
 
-    public static void Compile(string code, Stream stream)
+    public static void Compile(string code, Stream stream, bool useNewFormat = true)
     {
         var result = ExpressionsParser.Parse(code);
 
@@ -48,7 +48,7 @@ public class Compiler : ExpressionWalker
             return;
         }
 
-        new Compiler(scope).Compile(stream);
+        new Compiler(scope).Compile(stream, useNewFormat);
     }
 
     public static string GenerateIntermediateView(string code)
@@ -89,7 +89,7 @@ public class Compiler : ExpressionWalker
         return _builder.Build(true);
     }
 
-    private void Compile(Stream stream)
+    private void Compile(Stream stream, bool useNewFormat = true)
     {
         Visit(_root.Expression);
 
@@ -97,7 +97,10 @@ public class Compiler : ExpressionWalker
 
         _builder.AddOpReturn();
 
-        _builder.BuildNew(stream, true);
+        if (useNewFormat)
+            _builder.BuildNew(stream, true);
+        else
+            _builder.Build(stream);
     }
 
     public override void VisitConstant(ConstantExpression expression)
@@ -271,6 +274,7 @@ public class Compiler : ExpressionWalker
         marker.SetOperation(Opcodes.OpJump, conditionMarker.Value + 1);
 
         _builder.AddOpLoadVariable(variableName);
+        Visit(expression.Count);
         _builder.AddOpCompare(expression.DownToken is null ? "<" : ">");
         _builder.AddOpJumpTrue(bodyMarker.Value);
     }
@@ -413,6 +417,9 @@ public class Compiler : ExpressionWalker
         var context = _context;
 
         var functionName = expression.NameToken.Lexeme;
+        
+        var prevScope = _currentScope;
+        _currentScope = expression;
 
         var parameters = expression.Parameters.Select(p => p.Type).Cast<Type>().ToArray();
 
@@ -431,5 +438,6 @@ public class Compiler : ExpressionWalker
         Visit(expression.Body);
 
         _context = context;
+        _currentScope = prevScope;
     }
 }

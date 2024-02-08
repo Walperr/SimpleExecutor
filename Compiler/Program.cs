@@ -24,7 +24,7 @@ public static class Program
         {
             Compiler.Compile(code, file);
         }
-
+        
         using (var file = File.OpenRead(path))
         {
             Console.Write(AssemblyBuilder.LoadAssembly(file).Build());

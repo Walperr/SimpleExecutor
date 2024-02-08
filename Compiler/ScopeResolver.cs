@@ -6,8 +6,8 @@ namespace Compiler;
 public sealed class ScopeResolver : ExpressionWalker
 {
     private readonly ExpressionBase _root;
-    private ScopeExpression? _currentScope;
-    private ScopeExpression? _targetScope;
+    private ExpressionBase? _currentScope;
+    private ExpressionBase? _targetScope;
     private ExpressionBase? _target;
     private bool _found;
 
@@ -16,12 +16,12 @@ public sealed class ScopeResolver : ExpressionWalker
         _root = expression;
     }
 
-    public static ScopeExpression? FindScope(ExpressionBase targetExpression, ExpressionBase root)
+    public static ExpressionBase? FindScope(ExpressionBase targetExpression, ExpressionBase root)
     {
         return new ScopeResolver(root).FindScope(targetExpression);
     }
 
-    public ScopeExpression? FindScope(ExpressionBase targetExpression)
+    public ExpressionBase? FindScope(ExpressionBase targetExpression)
     {
         _found = false;
         _target = targetExpression;
@@ -51,6 +51,14 @@ public sealed class ScopeResolver : ExpressionWalker
         var prevScope = _currentScope;
         _currentScope = expression;
         base.VisitScope(expression);
+        _currentScope = prevScope; //reset previous scope when exit from current
+    }
+
+    public override void VisitFunctionDeclaration(FunctionDeclarationExpression expression)
+    {
+        var prevScope = _currentScope;
+        _currentScope = expression;
+        base.VisitFunctionDeclaration(expression);
         _currentScope = prevScope; //reset previous scope when exit from current
     }
 }

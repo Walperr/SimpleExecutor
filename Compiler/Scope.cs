@@ -9,7 +9,7 @@ public class Scope
 
     private readonly List<Scope> _children = new();
 
-    public Scope(Scope? parent, Function context, ScopeExpression expression)
+    public Scope(Scope? parent, Function context, ExpressionBase expression)
     {
         Parent = parent;
         Context = context;
@@ -19,7 +19,7 @@ public class Scope
     public Scope? Parent { get; }
 
     public IEnumerable<Scope> Children => _children;
-    public ScopeExpression Expression { get; }
+    public ExpressionBase Expression { get; }
     public Function Context { get; }
 
     public bool AddVariable(Variable variable)

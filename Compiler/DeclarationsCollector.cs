@@ -75,8 +75,18 @@ public class DeclarationsCollector : ExpressionWalker
             return;
         }
         
+        var scope = new Scope(_currentScope, _currentFunction, expression);
+
+        _currentScope?.AddScope(scope);
+
+        var currentScope = _currentScope;
+
+        _currentScope = scope;
+        _root ??= _currentScope;
+
         base.VisitFunctionDeclaration(expression);
 
         _currentFunction = function;
+        _currentScope = currentScope;
     }
 }

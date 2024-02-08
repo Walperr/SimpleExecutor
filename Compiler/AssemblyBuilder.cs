@@ -434,6 +434,8 @@ public class AssemblyBuilder
             outWriter.Write(string.Empty); // empty namespace
             outWriter.Write(function.Name);
             
+            outWriter.Write(function.ReturnType!.ID);
+            
             outWriter.Write(offset);
             
             outWriter.Write(function.ParametersCount);
@@ -551,13 +553,14 @@ public class AssemblyBuilder
             var id = reader.ReadInt32();
             var @namespace = reader.ReadString();
             var functionName = reader.ReadString();
+            var returnTypeID = reader.ReadInt32();
             var ip = reader.ReadInt32();
             var parametersCount = reader.ReadInt32();
             var variablesCount = reader.ReadInt32();
 
             var function = new Function(functionName, id, parametersCount);
-            
-            function.SetReturnType(PrimitiveTypes.None);
+
+            function.SetReturnType(builder._types.First(t => t.ID == returnTypeID));
 
             for (int j = 0; j < variablesCount; j++)
             {
@@ -848,6 +851,7 @@ public class AssemblyBuilder
 
         public void Build(BinaryWriter writer, bool fixAddresses = false)
         {
+            var startAddress = (int)writer.BaseStream.Position;
             for (var i = 0; i < _operations.Count; i++)
             {
                 var operation = _operations[i];
@@ -867,9 +871,9 @@ public class AssemblyBuilder
                                 writer.Write(targetInstruction);
                                 continue;
                             }
-                            
-                            var address = (int)writer.BaseStream.Position + 4;
-                            for (int j = i + 1; j < targetInstruction; j++)
+
+                            var address = startAddress;
+                            for (int j = 0; j < targetInstruction; j++)
                             {
                                 var op = _operations[j];
                                 address += sizeof(byte);
